@@ -35,11 +35,6 @@ export function Sidebar() {
             href: '/debts',
             icon: CreditCard,
         },
-        {
-            label: 'Ajustes',
-            href: '/settings',
-            icon: Settings,
-        },
     ];
 
     return (

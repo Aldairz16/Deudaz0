@@ -29,11 +29,6 @@ export function BottomNav() {
             href: '/debts',
             icon: CreditCard,
         },
-        {
-            label: 'Ajustes',
-            href: '/settings',
-            icon: Settings,
-        },
     ];
 
     return (
