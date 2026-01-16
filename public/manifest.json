@@ -1,0 +1,16 @@
+{
+  "name": "Deudazo",
+  "short_name": "Deudazo",
+  "description": "Gestiona tus finanzas personales de manera simple y efectiva.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#022c22",
+  "icons": [
+    {
+      "src": "/icon.png",
+      "sizes": "1024x1024",
+      "type": "image/png"
+    }
+  ]
+}
