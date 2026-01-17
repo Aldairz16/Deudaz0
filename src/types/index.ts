@@ -64,6 +64,7 @@ export interface AppState {
     toggleDebtStatus: (id: string) => Promise<void>;
 
     addDebtCategory: (name: string) => Promise<void>;
+    updateDebtCategory: (id: string, name: string) => Promise<void>;
     deleteDebtCategory: (id: string) => Promise<void>;
 
     processDebtPayment: (debtId: string, amount: number, walletId: string) => Promise<void>;

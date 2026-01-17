@@ -9,6 +9,7 @@ import { Pencil, Trash2, CheckCircle2, Circle, Info, Folder, Archive } from "luc
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { DebtFormDialog } from "./debt-form-dialog"
+import { DebtCategoryDialog } from "./debt-category-dialog"
 import { DebtPaymentDialog } from "./debt-payment-dialog"
 import {
     Accordion,
@@ -28,7 +29,7 @@ interface DebtListProps {
 }
 
 export function DebtList({ type }: DebtListProps) {
-    const { debts, debtCategories, deleteDebt, toggleDebtStatus } = useStore();
+    const { debts, debtCategories, deleteDebt, toggleDebtStatus, deleteDebtCategory } = useStore();
     const [showArchived, setShowArchived] = useState(false);
 
     // 1. Base Filter by Type (Payable/Receivable)
@@ -161,13 +162,36 @@ export function DebtList({ type }: DebtListProps) {
                     return (
                         <AccordionItem key={cat.id} value={cat.id} className="border rounded-lg px-2">
                             <AccordionTrigger className="hover:no-underline py-3">
-                                <div className="flex items-center justify-between w-full pr-4">
+                                <div className="flex items-center justify-between w-full pr-4 group">
                                     <div className="flex items-center gap-2">
                                         <Folder className="h-4 w-4 text-primary" />
                                         <span>{cat.name}</span>
                                         <span className="text-xs text-muted-foreground font-normal ml-2">({catDebts.length})</span>
                                     </div>
-                                    <span className="text-sm font-semibold">{formatCurrency(totalAmount, 'PEN')}</span>
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-sm font-semibold">{formatCurrency(totalAmount, 'PEN')}</span>
+
+                                        <div className="flex items-center gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                                            <DebtCategoryDialog mode="edit" defaultValues={cat}>
+                                                <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-primary">
+                                                    <Pencil className="h-3 w-3" />
+                                                </Button>
+                                            </DebtCategoryDialog>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    if (confirm(`¿Eliminar la carpeta "${cat.name}"? Las deudas pasarán a "Sin Carpeta".`)) {
+                                                        deleteDebtCategory(cat.id);
+                                                    }
+                                                }}
+                                            >
+                                                <Trash2 className="h-3 w-3" />
+                                            </Button>
+                                        </div>
+                                    </div>
                                 </div>
                             </AccordionTrigger>
                             <AccordionContent>

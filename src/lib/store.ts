@@ -314,6 +314,15 @@ export const useStore = create<AppState>((set, get) => ({
         }
     },
 
+    updateDebtCategory: async (id, name) => {
+        const { error } = await supabase.from('debt_categories').update({ name }).eq('id', id);
+        if (!error) {
+            set((state) => ({
+                debtCategories: state.debtCategories.map((c) => (c.id === id ? { ...c, name } : c)),
+            }));
+        }
+    },
+
     deleteDebtCategory: async (id) => {
         const { error } = await supabase.from('debt_categories').delete().eq('id', id);
         if (!error) {
