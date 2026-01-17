@@ -5,15 +5,27 @@ import { WalletCard } from "@/components/wallets/wallet-card";
 import { WalletFormDialog } from "@/components/wallets/wallet-form-dialog";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
+import { motion } from "framer-motion";
 
 export default function Home() {
   const { wallets } = useStore();
 
   const totalBalance = wallets.reduce((acc, curr) => acc + curr.balance, 0);
 
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+
   return (
     <div className="space-y-8 pb-20">
       <header className="flex flex-col gap-2">
+        {/* ... header content ... */}
         <h1 className="text-3xl font-bold tracking-tight">Deudazo</h1>
         <div className="flex items-end justify-between">
           <div>
@@ -40,11 +52,16 @@ export default function Home() {
             </WalletFormDialog>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <motion.div
+            variants={container}
+            initial="hidden"
+            animate="show"
+            className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-3"
+          >
             {wallets.map((wallet) => (
               <WalletCard key={wallet.id} wallet={wallet} />
             ))}
-          </div>
+          </motion.div>
         )}
       </section>
     </div>
