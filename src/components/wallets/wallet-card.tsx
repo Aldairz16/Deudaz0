@@ -50,8 +50,11 @@ export function WalletCard({ wallet }: WalletCardProps) {
                     boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
                 }}
             >
-                <div className="p-4 flex flex-col justify-between h-full space-y-2">
-                    <div className="flex flex-row items-start justify-between">
+                <div className="p-4 flex flex-col justify-between h-full space-y-2 relative">
+                    {/* Main Clickable Area Overlay */}
+                    <Link href={`/wallets/${wallet.id}`} className="absolute inset-0 z-0" aria-label={`Ver detalles de ${wallet.name}`} />
+
+                    <div className="flex flex-row items-start justify-between pointer-events-none">
                         <div className="min-w-0 flex-1 mr-1">
                             <h3 className="text-base font-bold tracking-tight truncate leading-tight" style={{ color: textColor }}>
                                 {wallet.name}
@@ -61,7 +64,7 @@ export function WalletCard({ wallet }: WalletCardProps) {
                             </p>
                         </div>
 
-                        <div className="flex items-center -mr-2 -mt-2 shrink-0">
+                        <div className="flex items-center -mr-2 -mt-2 shrink-0 pointer-events-auto relative z-10">
                             {/* Adjustment Trigger */}
                             <BalanceAdjustmentDialog wallet={wallet}>
                                 <Button variant="ghost" size="icon" className="h-7 w-7 hover:bg-black/10 dark:hover:bg-white/10" style={{ color: textColor }}>
@@ -97,14 +100,12 @@ export function WalletCard({ wallet }: WalletCardProps) {
                         </div>
                     </div>
 
-                    <Link href={`/wallets/${wallet.id}`} className="block group mt-auto">
-                        <div>
-                            <p className="text-[10px] opacity-80 mb-0.5" style={{ color: textColor }}>Balance</p>
-                            <div className="text-lg font-bold tracking-tight truncate" style={{ color: textColor }}>
-                                {wallet.currency} {wallet.balance.toFixed(2)}
-                            </div>
+                    <div className="pointer-events-none relative z-0 mt-auto">
+                        <p className="text-[10px] opacity-80 mb-0.5" style={{ color: textColor }}>Balance</p>
+                        <div className="text-lg font-bold tracking-tight truncate" style={{ color: textColor }}>
+                            {wallet.currency} {wallet.balance.toFixed(2)}
                         </div>
-                    </Link>
+                    </div>
                 </div>
             </Card>
         </motion.div>
