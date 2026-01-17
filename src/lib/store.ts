@@ -188,16 +188,52 @@ export const useStore = create<AppState>((set, get) => ({
     },
 
     updateTransaction: async (id, updates) => {
-        // Complex logic (wallet reversion) omitted for brevity in this first pass, 
-        // but ideally should be handled.
-        // For now, let's just update the record description/category etc.
-        // If amount/type changes, balance will be out of sync. 
-        // TODO: Implement balance reconciliation.
+        const transaction = get().transactions.find((t) => t.id === id);
+        if (!transaction) return;
 
+        // 1. Revert previous effect on wallet balance
+        const oldWallet = get().wallets.find((w) => w.id === transaction.walletId);
+        if (oldWallet && transaction.type !== 'ADJUSTMENT') {
+            const revertDelta = transaction.type === 'INCOME' ? -transaction.amount : transaction.amount;
+            const revertedBalance = oldWallet.balance + revertDelta;
+
+            // Optimistic update for old wallet
+            set((state) => ({
+                wallets: state.wallets.map(w => w.id === oldWallet.id ? { ...w, balance: revertedBalance } : w)
+            }));
+            // DB Update (async)
+            await supabase.from('wallets').update({ balance: revertedBalance }).eq('id', oldWallet.id);
+        }
+
+        // 2. Prepare new values
+        const newWalletId = updates.walletId || transaction.walletId;
+        const newAmount = updates.amount !== undefined ? updates.amount : transaction.amount;
+        const newType = updates.type || transaction.type;
+
+        // 3. Apply new effect on wallet balance
+        // Note: If wallet changed, we use the NEW wallet. If not, we use the OLD wallet (which already has reverted balance in local state)
+        // We must re-fetch the wallet from state to get the latest balance (important if oldWallet === newWallet)
+        const currentWallets = get().wallets;
+        const targetWallet = currentWallets.find(w => w.id === newWalletId);
+
+        if (targetWallet && newType !== 'ADJUSTMENT') {
+            const applyDelta = newType === 'INCOME' ? newAmount : -newAmount;
+            const newBalance = targetWallet.balance + applyDelta;
+
+            set((state) => ({
+                wallets: state.wallets.map(w => w.id === targetWallet.id ? { ...w, balance: newBalance } : w)
+            }));
+            await supabase.from('wallets').update({ balance: newBalance }).eq('id', targetWallet.id);
+        }
+
+        // 4. Update Transaction Record
         const dbUpdates: any = {};
         if (updates.description) dbUpdates.description = updates.description;
-        if (updates.amount) dbUpdates.amount = updates.amount; // Warning: Desync risk
+        if (updates.amount !== undefined) dbUpdates.amount = updates.amount;
         if (updates.date) dbUpdates.date = updates.date;
+        if (updates.type) dbUpdates.type = updates.type.toLowerCase();
+        if (updates.walletId) dbUpdates.wallet_id = updates.walletId;
+        if (updates.category) dbUpdates.category = updates.category;
 
         const { error } = await supabase.from('transactions').update(dbUpdates).eq('id', id);
 

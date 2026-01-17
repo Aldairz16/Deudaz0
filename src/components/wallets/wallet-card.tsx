@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link";
 import { Wallet } from "@/types"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatCurrency } from "@/lib/utils"
@@ -30,41 +31,48 @@ export function WalletCard({ wallet }: WalletCardProps) {
                 <CardTitle className="text-sm font-medium text-muted-foreground">
                     {wallet.name}
                 </CardTitle>
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">Open menu</span>
-                            <MoreHorizontal className="h-4 w-4" />
+                <div className="flex items-center gap-1">
+                    {/* Adjustment Trigger */}
+                    <BalanceAdjustmentDialog wallet={wallet}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary">
+                            <ArrowLeftRight className="h-4 w-4" />
                         </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <WalletFormDialog mode="edit" defaultValues={wallet}>
-                            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                <Pencil className="mr-2 h-4 w-4" /> Editar
+                    </BalanceAdjustmentDialog>
+
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                                <span className="sr-only">Open menu</span>
+                                <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <WalletFormDialog mode="edit" defaultValues={wallet}>
+                                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                    <Pencil className="mr-2 h-4 w-4" /> Editar
+                                </DropdownMenuItem>
+                            </WalletFormDialog>
+                            <DropdownMenuItem
+                                className="text-destructive focus:text-destructive"
+                                onClick={() => {
+                                    if (confirm('¿Estás seguro de que deseas eliminar esta billetera?')) {
+                                        deleteWallet(wallet.id);
+                                    }
+                                }}
+                            >
+                                <Trash2 className="mr-2 h-4 w-4" /> Eliminar
                             </DropdownMenuItem>
-                        </WalletFormDialog>
-                        <DropdownMenuItem
-                            className="text-destructive focus:text-destructive"
-                            onClick={() => {
-                                if (confirm('¿Estás seguro de que deseas eliminar esta billetera?')) {
-                                    deleteWallet(wallet.id);
-                                }
-                            }}
-                        >
-                            <Trash2 className="mr-2 h-4 w-4" /> Eliminar
-                        </DropdownMenuItem>
-                        {/* <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setShowAdjustment(true); }}>
-                <ArrowLeftRight className="mr-2 h-4 w-4" /> Ajustar Balance
-             </DropdownMenuItem> */}
-                    </DropdownMenuContent>
-                </DropdownMenu>
-                {/* Adjustment Dialog would go here */}
-            </CardHeader>
-            <CardContent>
-                <div className="text-2xl font-bold" style={{ color: wallet.balance < 0 ? '#ef4444' : 'inherit' }}>
-                    {wallet.currency} {wallet.balance.toFixed(2)}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </div>
-            </CardContent>
+            </CardHeader>
+            <Link href={`/wallets/${wallet.id}`} className="block">
+                <CardContent className="cursor-pointer">
+                    <div className="text-2xl font-bold" style={{ color: wallet.balance < 0 ? '#ef4444' : 'inherit' }}>
+                        {wallet.currency} {wallet.balance.toFixed(2)}
+                    </div>
+                </CardContent>
+            </Link>
         </Card>
     )
 }
