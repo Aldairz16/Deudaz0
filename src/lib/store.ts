@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase';
-import { AppState, Wallet, Transaction, Debt, DebtCategory, DBTransaction } from '@/types';
+import { AppState, Wallet, Transaction, Debt, DebtCategory } from '@/types';
 
 // Helper to map DB transaction to App Transaction
 const mapDBTransaction = (t: any): Transaction => ({
