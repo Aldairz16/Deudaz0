@@ -31,6 +31,8 @@ export function BottomNav() {
         },
     ];
 
+    if (pathname === '/login') return null;
+
     return (
         <div className="fixed bottom-0 left-0 right-0 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-50 md:hidden pb-[calc(env(safe-area-inset-bottom)+10px)] pt-3">
             <nav className="flex justify-around items-center h-auto max-w-md mx-auto">

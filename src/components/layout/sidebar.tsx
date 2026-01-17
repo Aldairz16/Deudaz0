@@ -37,6 +37,8 @@ export function Sidebar() {
         },
     ];
 
+    if (pathname === '/login') return null;
+
     return (
         <aside className="hidden md:flex flex-col w-64 border-r bg-background h-screen sticky top-0">
             <div className="p-6">
@@ -59,7 +61,7 @@ export function Sidebar() {
                                 className={cn("w-full justify-start gap-3", isActive && "bg-secondary")}
                             >
                                 <item.icon className="h-5 w-5" />
-                                {item.label}
+                                <span className="font-medium">{item.label}</span>
                             </Button>
                         </Link>
                     );
@@ -73,7 +75,7 @@ export function Sidebar() {
                 </div>
                 <Button
                     variant="outline"
-                    className="w-full justify-start text-red-500 hover:text-red-600 hover:bg-red-50"
+                    className="w-full justify-start text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10"
                     onClick={async () => {
                         const { supabase } = await import('@/lib/supabase');
                         await supabase.auth.signOut();
@@ -82,9 +84,6 @@ export function Sidebar() {
                 >
                     Cerrar Sesión
                 </Button>
-                <div className="text-xs text-muted-foreground text-center">
-                    <p>© 2024 Deudazo</p>
-                </div>
             </div>
         </aside>
     );
