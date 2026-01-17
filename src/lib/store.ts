@@ -267,9 +267,11 @@ export const useStore = create<AppState>((set, get) => ({
     updateDebt: async (id, updates) => {
         const dbUpdates: any = {};
         if (updates.description) dbUpdates.person_name = updates.description;
-        if (updates.amount) dbUpdates.amount = updates.amount;
+        if (updates.amount !== undefined) dbUpdates.amount = updates.amount;
         if (updates.status) dbUpdates.status = updates.status.toLowerCase();
-        // ...
+        if (updates.dueDate) dbUpdates.due_date = updates.dueDate;
+        if (updates.categoryId) dbUpdates.category_id = updates.categoryId;
+        if (updates.type) dbUpdates.type = updates.type.toLowerCase();
 
         const { error } = await supabase.from('debts').update(dbUpdates).eq('id', id);
 
