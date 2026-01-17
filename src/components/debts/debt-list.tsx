@@ -5,7 +5,8 @@ import { useStore } from "@/lib/store"
 import { formatCurrency } from "@/lib/utils"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import { Pencil, Trash2, CheckCircle2, Circle, Info, Folder } from "lucide-react"
+import { Pencil, Trash2, CheckCircle2, Circle, Info, Folder, Archive } from "lucide-react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { DebtFormDialog } from "./debt-form-dialog"
 import { DebtPaymentDialog } from "./debt-payment-dialog"
@@ -28,9 +29,15 @@ interface DebtListProps {
 
 export function DebtList({ type }: DebtListProps) {
     const { debts, debtCategories, deleteDebt, toggleDebtStatus } = useStore();
+    const [showArchived, setShowArchived] = useState(false);
 
-    // Filter by type
-    const relevantDebts = debts.filter(d => d.type === type);
+    // 1. Base Filter by Type (Payable/Receivable)
+    const typeFilteredDebts = debts.filter(d => d.type === type);
+
+    // 2. Filter by Status (Pending vs Paid/Archived)
+    const relevantDebts = typeFilteredDebts.filter(d =>
+        showArchived ? d.status === 'PAID' : d.status === 'PENDING'
+    );
 
     // Grouping Logic
     const debtsByCategory = relevantDebts.reduce((acc, debt) => {
@@ -40,17 +47,15 @@ export function DebtList({ type }: DebtListProps) {
         return acc;
     }, {} as Record<string, Debt[]>);
 
-    const categories = [...debtCategories, { id: 'uncategorized', name: 'Sin Carpeta' }]; // Virtual category for uncategorized
-
-    // Sort logic? maybe by due date later.
+    const categories = [...debtCategories, { id: 'uncategorized', name: 'Sin Carpeta' }];
 
     const renderDebtRow = (debt: Debt) => {
         const isPaid = debt.status === 'PAID';
 
         return (
-            <div key={debt.id} className={`flx flex-row items-center justify-between p-3 border-b last:border-0 hover:bg-muted/40 transition-colors ${isPaid ? 'opacity-50' : ''}`}>
+            <div key={debt.id} className="flex flex-row items-center justify-between p-3 border-b last:border-0 hover:bg-muted/40 transition-colors">
                 <div className="flex items-center gap-3 overflow-hidden">
-                    {/* Payment Trigger */}
+                    {/* Payment Trigger - Only for Pending */}
                     {!isPaid ? (
                         <DebtPaymentDialog debt={debt}>
                             <Button
@@ -62,31 +67,42 @@ export function DebtList({ type }: DebtListProps) {
                             </Button>
                         </DebtPaymentDialog>
                     ) : (
+                        // If we are in archive view, we might want to un-archive? Or just show check.
+                        // For now just show active check.
                         <Button
                             variant="ghost"
                             size="icon"
-                            disabled
-                            className="h-8 w-8 shrink-0 rounded-full text-green-500"
+                            // Option to move back to pending if needed? 
+                            // toggleDebtStatus(debt.id) could be used here if user wants to undo.
+                            onClick={() => {
+                                if (confirm("¿Marcar esta deuda como pendiente nuevamente?")) {
+                                    toggleDebtStatus(debt.id); // Assuming this toggles status
+                                }
+                            }}
+                            className="h-8 w-8 shrink-0 rounded-full text-green-500 hover:text-orange-500"
                         >
                             <CheckCircle2 className="h-5 w-5" />
                         </Button>
                     )}
 
                     <div className="flex flex-col overflow-hidden">
-                        <span className={`font-medium truncate ${isPaid ? 'line-through decoration-slate-500' : ''}`}>
+                        <span className="font-medium truncate">
                             {debt.description}
                         </span>
-                        {debt.dueDate && (
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                <Info className="h-3 w-3" />
-                                <span>Vence: {format(new Date(debt.dueDate), 'd MMM yyyy', { locale: es })}</span>
-                            </div>
-                        )}
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            {debt.dueDate && (
+                                <div className="flex items-center gap-1">
+                                    <Info className="h-3 w-3" />
+                                    <span>Vence: {format(new Date(debt.dueDate), 'd MMM', { locale: es })}</span>
+                                </div>
+                            )}
+                            {isPaid && <span className="text-green-600 font-medium">Pagado</span>}
+                        </div>
                     </div>
                 </div>
 
                 <div className="flex items-center gap-4 shrink-0 ml-2">
-                    <span className={`font-bold ${type === 'RECEIVABLE' ? 'text-green-600' : 'text-red-600'}`}>
+                    <span className={`font-bold ${isPaid ? 'text-muted-foreground line-through' : (type === 'RECEIVABLE' ? 'text-green-600' : 'text-red-600')}`}>
                         {formatCurrency(debt.amount, 'PEN')}
                     </span>
 
@@ -102,7 +118,7 @@ export function DebtList({ type }: DebtListProps) {
                             size="icon"
                             className="h-7 w-7 text-muted-foreground hover:text-destructive"
                             onClick={() => {
-                                if (confirm('¿Eliminar esta deuda?')) deleteDebt(debt.id);
+                                if (confirm('¿Eliminar esta deuda permanentemente?')) deleteDebt(debt.id);
                             }}
                         >
                             <Trash2 className="h-3.5 w-3.5" />
@@ -115,13 +131,32 @@ export function DebtList({ type }: DebtListProps) {
 
     return (
         <div className="space-y-4">
+            {/* Header Control for Archive */}
+            <div className="flex justify-end px-1">
+                <Button
+                    variant={showArchived ? "secondary" : "ghost"}
+                    size="sm"
+                    onClick={() => setShowArchived(!showArchived)}
+                    className="text-xs h-7 gap-2"
+                >
+                    <Archive className="h-3.5 w-3.5" />
+                    {showArchived ? 'Ver Pendientes' : 'Ver Archivo'}
+                </Button>
+            </div>
+
+            {showArchived && (
+                <div className="bg-muted/50 p-2 rounded-md text-center text-xs text-muted-foreground">
+                    Mostrando deudas archivadas (pagadas).
+                </div>
+            )}
+
             {/* Render Categorized first (folders) */}
             <Accordion type="multiple" className="w-full space-y-2">
                 {debtCategories.map(cat => {
                     const catDebts = debtsByCategory[cat.id];
                     if (!catDebts || catDebts.length === 0) return null;
 
-                    const totalAmount = catDebts.reduce((sum, d) => d.status === 'PENDING' ? sum + d.amount : sum, 0);
+                    const totalAmount = catDebts.reduce((sum, d) => sum + d.amount, 0);
 
                     return (
                         <AccordionItem key={cat.id} value={cat.id} className="border rounded-lg px-2">
@@ -147,24 +182,31 @@ export function DebtList({ type }: DebtListProps) {
 
             {/* Render Uncategorized */}
             <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
-                {(debtsByCategory['uncategorized'] || []).map((debt, index) => (
-                    // Add wrapper div to apply flex class since renderDebtRow returns just the div content logic
-                    // Wait, renderDebtRow returns a div.
-                    renderDebtRow(debt)
-                ))}
-                {(!debtsByCategory['uncategorized'] || debtsByCategory['uncategorized'].length === 0) && debtCategories.length === 0 && relevantDebts.length === 0 && (
-                    <div className="p-8 text-center text-muted-foreground text-sm">
-                        No hay registros.
+                {(debtsByCategory['uncategorized'] || []).map(renderDebtRow)}
+
+                {relevantDebts.length === 0 && (
+                    <div className="p-8 text-center text-muted-foreground text-sm flex flex-col items-center gap-2">
+                        {showArchived ? (
+                            <>
+                                <Archive className="h-8 w-8 opacity-20" />
+                                <p>No hay deudas archivadas.</p>
+                            </>
+                        ) : (
+                            <>
+                                <CheckCircle2 className="h-8 w-8 opacity-20" />
+                                <p>No hay deudas pendientes.</p>
+                            </>
+                        )}
                     </div>
                 )}
             </div>
 
             {/* Summary Footer */}
-            {relevantDebts.length > 0 && (
+            {relevantDebts.length > 0 && !showArchived && (
                 <div className="flex justify-between items-center px-4 py-2 bg-muted/30 rounded-lg mt-2 font-medium text-sm">
                     <span>Total Pendiente</span>
                     <span>
-                        {formatCurrency(relevantDebts.reduce((sum, d) => d.status === 'PENDING' ? sum + d.amount : sum, 0), 'PEN')}
+                        {formatCurrency(relevantDebts.reduce((sum, d) => sum + d.amount, 0), 'PEN')}
                     </span>
                 </div>
             )}
