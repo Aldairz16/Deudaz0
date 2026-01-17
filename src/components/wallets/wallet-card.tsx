@@ -28,13 +28,13 @@ export function WalletCard({ wallet }: WalletCardProps) {
 
     return (
         <Card
-            className="relative overflow-hidden transition-all hover:shadow-lg hover:scale-[1.02] border-0"
+            className="relative overflow-hidden transition-all hover:shadow-lg hover:scale-[1.02] border-0 aspect-[1.6/1]"
             style={{ backgroundColor: wallet.color, color: textColor }}
         >
-            <div className="p-6 flex flex-col justify-between h-full space-y-4">
+            <div className="p-4 flex flex-col justify-between h-full space-y-2">
                 <div className="flex flex-row items-start justify-between">
-                    <div>
-                        <h3 className="text-xl font-bold tracking-tight" style={{ color: textColor }}>
+                    <div className="min-w-0 flex-1 mr-1">
+                        <h3 className="text-base font-bold tracking-tight truncate leading-tight" style={{ color: textColor }}>
                             {wallet.name}
                         </h3>
                         <p className="text-xs font-medium uppercase tracking-wider opacity-80" style={{ color: textColor }}>
@@ -42,19 +42,19 @@ export function WalletCard({ wallet }: WalletCardProps) {
                         </p>
                     </div>
 
-                    <div className="flex items-center gap-1 -mr-2 -mt-2">
+                    <div className="flex items-center -mr-2 -mt-2 shrink-0">
                         {/* Adjustment Trigger */}
                         <BalanceAdjustmentDialog wallet={wallet}>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-black/10 dark:hover:bg-white/10" style={{ color: textColor }}>
-                                <ArrowLeftRight className="h-4 w-4" />
+                            <Button variant="ghost" size="icon" className="h-7 w-7 hover:bg-black/10 dark:hover:bg-white/10" style={{ color: textColor }}>
+                                <ArrowLeftRight className="h-3.5 w-3.5" />
                             </Button>
                         </BalanceAdjustmentDialog>
 
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-black/10 dark:hover:bg-white/10" style={{ color: textColor }}>
+                                <Button variant="ghost" className="h-7 w-7 p-0 hover:bg-black/10 dark:hover:bg-white/10" style={{ color: textColor }}>
                                     <span className="sr-only">Open menu</span>
-                                    <MoreHorizontal className="h-4 w-4" />
+                                    <MoreHorizontal className="h-3.5 w-3.5" />
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
@@ -78,10 +78,10 @@ export function WalletCard({ wallet }: WalletCardProps) {
                     </div>
                 </div>
 
-                <Link href={`/wallets/${wallet.id}`} className="block group">
+                <Link href={`/wallets/${wallet.id}`} className="block group mt-auto">
                     <div>
-                        <p className="text-xs opacity-80 mb-1" style={{ color: textColor }}>Balance Total</p>
-                        <div className="text-3xl font-bold tracking-tighter" style={{ color: textColor }}>
+                        <p className="text-[10px] opacity-80 mb-0.5" style={{ color: textColor }}>Balance</p>
+                        <div className="text-lg font-bold tracking-tight truncate" style={{ color: textColor }}>
                             {wallet.currency} {wallet.balance.toFixed(2)}
                         </div>
                     </div>
