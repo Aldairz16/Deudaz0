@@ -50,82 +50,101 @@ export function DebtList({ type }: DebtListProps) {
 
     const categories = [...debtCategories, { id: 'uncategorized', name: 'Sin Carpeta' }];
 
+    const [expandedDebtId, setExpandedDebtId] = useState<string | null>(null);
+
     const renderDebtRow = (debt: Debt) => {
         const isPaid = debt.status === 'PAID';
+        const isExpanded = expandedDebtId === debt.id;
 
         return (
-            <div key={debt.id} className="flex flex-row items-center justify-between p-3 border-b last:border-0 hover:bg-muted/40 transition-colors">
-                <div className="flex items-center gap-3 overflow-hidden">
-                    {/* Payment Trigger - Only for Pending */}
-                    {!isPaid ? (
-                        <DebtPaymentDialog debt={debt}>
+            <div key={debt.id} className="border-b last:border-0 hover:bg-muted/40 transition-colors">
+                <div
+                    className="flex flex-row items-center justify-between p-3 cursor-pointer"
+                    onClick={() => setExpandedDebtId(isExpanded ? null : debt.id)}
+                >
+                    <div className="flex items-center gap-3 overflow-hidden">
+                        {/* Payment Trigger - Only for Pending */}
+                        {!isPaid ? (
+                            <DebtPaymentDialog debt={debt}>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 shrink-0 rounded-full text-muted-foreground hover:text-green-500"
+                                    onClick={(e) => e.stopPropagation()}
+                                >
+                                    <Circle className="h-5 w-5" />
+                                </Button>
+                            </DebtPaymentDialog>
+                        ) : (
                             <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8 shrink-0 rounded-full text-muted-foreground hover:text-green-500"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (confirm("¿Marcar esta deuda como pendiente nuevamente?")) {
+                                        toggleDebtStatus(debt.id);
+                                    }
+                                }}
+                                className="h-8 w-8 shrink-0 rounded-full text-green-500 hover:text-orange-500"
                             >
-                                <Circle className="h-5 w-5" />
+                                <CheckCircle2 className="h-5 w-5" />
                             </Button>
-                        </DebtPaymentDialog>
-                    ) : (
-                        // If we are in archive view, we might want to un-archive? Or just show check.
-                        // For now just show active check.
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            // Option to move back to pending if needed? 
-                            // toggleDebtStatus(debt.id) could be used here if user wants to undo.
-                            onClick={() => {
-                                if (confirm("¿Marcar esta deuda como pendiente nuevamente?")) {
-                                    toggleDebtStatus(debt.id); // Assuming this toggles status
-                                }
-                            }}
-                            className="h-8 w-8 shrink-0 rounded-full text-green-500 hover:text-orange-500"
-                        >
-                            <CheckCircle2 className="h-5 w-5" />
-                        </Button>
-                    )}
+                        )}
 
-                    <div className="flex flex-col overflow-hidden">
-                        <span className="font-medium truncate">
-                            {debt.description}
+                        <div className="flex flex-col overflow-hidden">
+                            <span className="font-medium truncate">
+                                {debt.description}
+                            </span>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                {debt.dueDate && (
+                                    <div className="flex items-center gap-1">
+                                        <Info className="h-3 w-3" />
+                                        <span>Vence: {format(new Date(debt.dueDate), 'd MMM', { locale: es })}</span>
+                                    </div>
+                                )}
+                                {isPaid && <span className="text-green-600 font-medium">Pagado</span>}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-4 shrink-0 ml-2">
+                        <span className={`font-bold ${isPaid ? 'text-muted-foreground line-through' : (type === 'RECEIVABLE' ? 'text-green-600' : 'text-red-600')}`}>
+                            {formatCurrency(debt.amount, 'PEN')}
                         </span>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            {debt.dueDate && (
-                                <div className="flex items-center gap-1">
-                                    <Info className="h-3 w-3" />
-                                    <span>Vence: {format(new Date(debt.dueDate), 'd MMM', { locale: es })}</span>
-                                </div>
-                            )}
-                            {isPaid && <span className="text-green-600 font-medium">Pagado</span>}
+
+                        <div className="flex items-center gap-1">
+                            <DebtFormDialog mode="edit" defaultValues={debt}>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7 text-muted-foreground hover:text-primary"
+                                    onClick={(e) => e.stopPropagation()}
+                                >
+                                    <Pencil className="h-3.5 w-3.5" />
+                                </Button>
+                            </DebtFormDialog>
+
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (confirm('¿Eliminar esta deuda permanentemente?')) deleteDebt(debt.id);
+                                }}
+                            >
+                                <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
                         </div>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-4 shrink-0 ml-2">
-                    <span className={`font-bold ${isPaid ? 'text-muted-foreground line-through' : (type === 'RECEIVABLE' ? 'text-green-600' : 'text-red-600')}`}>
-                        {formatCurrency(debt.amount, 'PEN')}
-                    </span>
-
-                    <div className="flex items-center gap-1">
-                        <DebtFormDialog mode="edit" defaultValues={debt}>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary">
-                                <Pencil className="h-3.5 w-3.5" />
-                            </Button>
-                        </DebtFormDialog>
-
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                            onClick={() => {
-                                if (confirm('¿Eliminar esta deuda permanentemente?')) deleteDebt(debt.id);
-                            }}
-                        >
-                            <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
+                {/* Expanded Details */}
+                {isExpanded && (
+                    <div className="px-14 pb-3 text-xs text-muted-foreground animate-in slide-in-from-top-1 fade-in duration-200">
+                        <p>Creada el: {format(new Date(debt.createdAt), 'dd MMM yyyy, HH:mm', { locale: es })}</p>
                     </div>
-                </div>
+                )}
             </div>
         );
     };
