@@ -4,7 +4,7 @@ import { TransactionTable } from "@/components/transactions/transaction-table";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { Search, Filter, Check } from "lucide-react";
-import { startOfDay, isSameMonth, isSameWeek, isSameYear } from "date-fns";
+import { isSameMonth, isSameWeek, isSameYear } from "date-fns";
 import { Button } from "@/components/ui/button";
 import {
     DropdownMenu,
