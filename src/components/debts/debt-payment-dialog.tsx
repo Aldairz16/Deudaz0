@@ -46,6 +46,7 @@ export function DebtPaymentDialog({ debt, children }: DebtPaymentDialogProps) {
     };
 
     const isPayable = debt.type === 'PAYABLE';
+    const selectedWallet = wallets.find(w => w.id === walletId);
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
@@ -92,10 +93,15 @@ export function DebtPaymentDialog({ debt, children }: DebtPaymentDialogProps) {
                                 ))}
                             </SelectContent>
                         </Select>
+                        {isPayable && selectedWallet && selectedWallet.balance < amount && (
+                            <p className="text-xs text-red-500 font-medium">
+                                Saldo insuficiente en {selectedWallet.name}. Faltan {formatCurrency(amount - selectedWallet.balance, selectedWallet.currency)}.
+                            </p>
+                        )}
                     </div>
 
                     <DialogFooter>
-                        <Button type="submit" disabled={!amount || !walletId}>
+                        <Button type="submit" disabled={!amount || !walletId || (isPayable && selectedWallet ? selectedWallet.balance < amount : false)}>
                             Confirmar {isPayable ? 'Pago' : 'Cobro'}
                         </Button>
                     </DialogFooter>
