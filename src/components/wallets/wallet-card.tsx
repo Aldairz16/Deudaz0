@@ -28,7 +28,7 @@ export function WalletCard({ wallet }: WalletCardProps) {
 
     return (
         <Card
-            className="relative overflow-hidden transition-all hover:shadow-lg hover:scale-[1.02] border-0 aspect-[1.6/1]"
+            className="relative overflow-hidden transition-all hover:shadow-lg hover:scale-[1.02] border-0 aspect-[1.2/1]"
             style={{ backgroundColor: wallet.color, color: textColor }}
         >
             <div className="p-4 flex flex-col justify-between h-full space-y-2">
