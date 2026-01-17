@@ -1,3 +1,5 @@
+"use client"
+
 import { useStore } from "@/lib/store";
 import { TransactionItem } from "@/components/transactions/transaction-item";
 import { TransactionTable } from "@/components/transactions/transaction-table";
