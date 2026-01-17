@@ -1,11 +1,9 @@
-"use client"
-
 import { Button } from "@/components/ui/button"
 import { useStore } from "@/lib/store"
 import { Plus } from "lucide-react"
 import { DebtList } from "@/components/debts/debt-list"
 import { DebtFormDialog } from "@/components/debts/debt-form-dialog"
-import { DebtCategoryDialog } from "@/components/debts/debt-category-dialog"
+import { ManageCategoriesDialog } from "@/components/debts/manage-categories-dialog"
 
 export default function DebtsPage() {
     return (
@@ -13,7 +11,7 @@ export default function DebtsPage() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <h1 className="text-2xl font-bold">Gestión de Deudas</h1>
                 <div className="flex items-center gap-2">
-                    <DebtCategoryDialog />
+                    <ManageCategoriesDialog />
                     <DebtFormDialog>
                         <Button className="gap-2">
                             <Plus className="h-4 w-4" />
