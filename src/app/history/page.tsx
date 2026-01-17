@@ -3,9 +3,17 @@ import { TransactionItem } from "@/components/transactions/transaction-item";
 import { TransactionTable } from "@/components/transactions/transaction-table";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
-import { Search } from "lucide-react";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { isSameMonth, isSameWeek, isSameYear, parseISO, startOfDay } from "date-fns";
+import { Search, Filter, Check } from "lucide-react";
+import { startOfDay, isSameMonth, isSameWeek, isSameYear } from "date-fns";
+import { Button } from "@/components/ui/button";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 
 type FilterType = 'ALL' | 'WEEK' | 'MONTH' | 'YEAR';
 
@@ -36,6 +44,15 @@ export default function HistoryPage() {
         })
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
+    const getFilterLabel = (f: FilterType) => {
+        switch (f) {
+            case 'WEEK': return 'Esta Semana';
+            case 'MONTH': return 'Este Mes';
+            case 'YEAR': return 'Este Año';
+            default: return 'Todos';
+        }
+    };
+
     return (
         <div className="space-y-6 pb-20 md:pb-0">
             <header className="space-y-4">
@@ -43,17 +60,8 @@ export default function HistoryPage() {
                     <h1 className="text-2xl font-bold">Historial</h1>
                 </div>
 
-                <div className="space-y-3">
-                    <Tabs defaultValue="MONTH" value={filter} onValueChange={(v) => setFilter(v as FilterType)} className="w-full">
-                        <TabsList className="grid w-full grid-cols-4">
-                            <TabsTrigger value="ALL">Todos</TabsTrigger>
-                            <TabsTrigger value="WEEK">Semana</TabsTrigger>
-                            <TabsTrigger value="MONTH">Mes</TabsTrigger>
-                            <TabsTrigger value="YEAR">Año</TabsTrigger>
-                        </TabsList>
-                    </Tabs>
-
-                    <div className="relative">
+                <div className="flex gap-2">
+                    <div className="relative flex-1">
                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
                             type="search"
@@ -63,7 +71,41 @@ export default function HistoryPage() {
                             onChange={(e) => setSearch(e.target.value)}
                         />
                     </div>
+
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="icon" className="shrink-0">
+                                <Filter className={`h-4 w-4 ${filter !== 'ALL' ? 'text-primary' : ''}`} />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Filtrar por fecha</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => setFilter('ALL')}>
+                                <span className={filter === 'ALL' ? 'font-bold' : ''}>Todos</span>
+                                {filter === 'ALL' && <Check className="ml-auto h-4 w-4" />}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setFilter('WEEK')}>
+                                <span className={filter === 'WEEK' ? 'font-bold' : ''}>Esta Semana</span>
+                                {filter === 'WEEK' && <Check className="ml-auto h-4 w-4" />}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setFilter('MONTH')}>
+                                <span className={filter === 'MONTH' ? 'font-bold' : ''}>Este Mes</span>
+                                {filter === 'MONTH' && <Check className="ml-auto h-4 w-4" />}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setFilter('YEAR')}>
+                                <span className={filter === 'YEAR' ? 'font-bold' : ''}>Este Año</span>
+                                {filter === 'YEAR' && <Check className="ml-auto h-4 w-4" />}
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </div>
+
+                {filter !== 'ALL' && (
+                    <p className="text-xs text-muted-foreground">
+                        Mostrando transacciones de: <span className="font-medium text-foreground">{getFilterLabel(filter)}</span>
+                    </p>
+                )}
             </header>
 
             <div className="space-y-4">
