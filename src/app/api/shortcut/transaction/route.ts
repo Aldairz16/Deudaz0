@@ -113,9 +113,23 @@ export async function POST(req: NextRequest) {
         }
 
         // Normalize Transaction Type
-        let transactionType = (type || 'EXPENSE').toString().toUpperCase().trim();
-        if (transactionType === 'GASTO') transactionType = 'EXPENSE';
-        if (transactionType === 'INGRESO') transactionType = 'INCOME';
+        let rawType = (type || 'EXPENSE').toString();
+        let normalizedType = rawType.toUpperCase().trim();
+
+        console.log(`Raw Type: "${rawType}"`);
+
+        // Map common Spanish terms just in case
+        if (normalizedType.includes('GASTO') || normalizedType.includes('EGRESO')) normalizedType = 'EXPENSE';
+        if (normalizedType.includes('INGRESO')) normalizedType = 'INCOME';
+
+        // STRICT VALIDATION FALLBACK
+        // If it is neither EXPENSE nor INCOME, force EXPENSE to avoid DB crash
+        if (normalizedType !== 'INCOME' && normalizedType !== 'EXPENSE') {
+            console.warn(`Unknown type "${normalizedType}", defaulting to EXPENSE`);
+            normalizedType = 'EXPENSE';
+        }
+
+        console.log(`Final Type: "${normalizedType}"`);
 
         // 4. Create Transaction
         const { data: transaction, error } = await supabaseAdmin
@@ -125,7 +139,7 @@ export async function POST(req: NextRequest) {
                 wallet_id: walletId,
                 amount: parseFloat(amount),
                 description: description || 'Movimiento rápido',
-                type: transactionType,
+                type: normalizedType,
                 category: category || 'General',
                 date: new Date().toISOString()
             })
@@ -141,7 +155,7 @@ export async function POST(req: NextRequest) {
         // Let's simple fetch-update.
         const { data: wallet } = await supabaseAdmin.from('wallets').select('balance').eq('id', walletId).single();
         if (wallet) {
-            const delta = transactionType === 'INCOME' ? parseFloat(amount) : -parseFloat(amount);
+            const delta = normalizedType === 'INCOME' ? parseFloat(amount) : -parseFloat(amount);
             const newBalance = wallet.balance + delta;
             await supabaseAdmin.from('wallets').update({ balance: newBalance }).eq('id', walletId);
         }
