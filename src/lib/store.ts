@@ -426,4 +426,6 @@ export const useStore = create<AppState>((set, get) => ({
         });
     },
 
+    showBalances: true,
+    toggleShowBalances: () => set((state) => ({ showBalances: !state.showBalances })),
 }));

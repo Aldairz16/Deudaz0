@@ -89,6 +89,10 @@ export interface AppState {
     // Auth
     user: any | null;
     setUser: (user: any | null) => void;
+
+    // UI State
+    showBalances: boolean;
+    toggleShowBalances: () => void;
 }
 
 export type DebtType = 'PAYABLE' | 'RECEIVABLE';

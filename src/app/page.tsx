@@ -11,8 +11,7 @@ import { formatCurrency } from "@/lib/utils";
 import { useState } from "react";
 
 export default function Home() {
-  const { wallets, debts } = useStore();
-  const [showBalances, setShowBalances] = useState(true);
+  const { wallets, debts, showBalances, toggleShowBalances } = useStore();
 
   const totalWalletBalance = wallets.reduce((acc, curr) => acc + curr.balance, 0);
 
@@ -57,7 +56,7 @@ export default function Home() {
               variant="ghost"
               size="icon"
               className="rounded-full"
-              onClick={() => setShowBalances(!showBalances)}
+              onClick={toggleShowBalances}
             >
               {showBalances ? <Eye className="h-5 w-5" /> : <EyeOff className="h-5 w-5" />}
             </Button>
