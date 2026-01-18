@@ -112,6 +112,11 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'No wallet found for this user.' }, { status: 404 });
         }
 
+        // Normalize Transaction Type
+        let transactionType = (type || 'EXPENSE').toString().toUpperCase().trim();
+        if (transactionType === 'GASTO') transactionType = 'EXPENSE';
+        if (transactionType === 'INGRESO') transactionType = 'INCOME';
+
         // 4. Create Transaction
         const { data: transaction, error } = await supabaseAdmin
             .from('transactions')
@@ -120,7 +125,7 @@ export async function POST(req: NextRequest) {
                 wallet_id: walletId,
                 amount: parseFloat(amount),
                 description: description || 'Movimiento rápido',
-                type: (type || 'EXPENSE').toUpperCase(),
+                type: transactionType,
                 category: category || 'General',
                 date: new Date().toISOString()
             })
@@ -136,7 +141,7 @@ export async function POST(req: NextRequest) {
         // Let's simple fetch-update.
         const { data: wallet } = await supabaseAdmin.from('wallets').select('balance').eq('id', walletId).single();
         if (wallet) {
-            const delta = (type || 'EXPENSE').toUpperCase() === 'INCOME' ? parseFloat(amount) : -parseFloat(amount);
+            const delta = transactionType === 'INCOME' ? parseFloat(amount) : -parseFloat(amount);
             const newBalance = wallet.balance + delta;
             await supabaseAdmin.from('wallets').update({ balance: newBalance }).eq('id', walletId);
         }
