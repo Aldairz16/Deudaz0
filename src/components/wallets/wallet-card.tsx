@@ -16,31 +16,19 @@ import { useStore } from "@/lib/store"
 import { WalletFormDialog } from "./wallet-form-dialog"
 import { useState } from "react"
 import { BalanceAdjustmentDialog } from "./balance-adjustment-dialog"
-import { motion } from "framer-motion";
 
 interface WalletCardProps {
     wallet: Wallet
     className?: string
 }
 
-const item = {
-    hidden: { opacity: 0, y: 20, scale: 0.95 },
-    show: {
-        opacity: 1,
-        y: 0,
-        scale: 1,
-        transition: { type: "spring", stiffness: 300, damping: 30 }
-    }
-} as const;
 
 export function WalletCard({ wallet, className }: WalletCardProps) {
     const { deleteWallet } = useStore();
     const textColor = getContrastingTextColor(wallet.color);
 
     return (
-        <motion.div
-            variants={item}
-            whileTap={{ scale: 0.92, transition: { duration: 0.1 } }}
+        <div
             className={`w-full ${className || ''}`}
         >
             <Card
@@ -133,6 +121,6 @@ export function WalletCard({ wallet, className }: WalletCardProps) {
                     </div>
                 </div>
             </Card>
-        </motion.div>
+        </div>
     )
 }

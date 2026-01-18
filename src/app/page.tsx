@@ -5,20 +5,10 @@ import { WalletCard } from "@/components/wallets/wallet-card";
 import { WalletFormDialog } from "@/components/wallets/wallet-form-dialog";
 import { Button } from "@/components/ui/button";
 import { Plus, TrendingDown, TrendingUp, Wallet, Eye, EyeOff } from "lucide-react";
-import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/utils";
 import { useState } from "react";
 
-const container = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1
-    }
-  }
-};
 
 export default function Home() {
   const { wallets, debts, showBalances, toggleShowBalances } = useStore();
@@ -135,10 +125,7 @@ export default function Home() {
             </WalletFormDialog>
           </div>
         ) : (
-          <motion.div
-            variants={container}
-            initial="hidden"
-            animate="show"
+          <div
             className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-3"
           >
             {wallets.map((wallet) => (
@@ -147,10 +134,9 @@ export default function Home() {
                 wallet={wallet}
                 className={!showBalances ? "blur-sm transition-all hover:blur-none" : "transition-all"}
               // Passing a prop or handling mask internally would be cleaner, but masking via class/blur is a quick visual hack.
-              // Better approach: pass a `hidden` prop to WalletCard if I can modify it.
               />
             ))}
-          </motion.div>
+          </div>
         )}
       </section>
     </div>
