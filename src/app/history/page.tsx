@@ -23,11 +23,18 @@ export default function HistoryPage() {
     const { transactions, wallets } = useStore();
     const [search, setSearch] = useState("");
     const [filter, setFilter] = useState<FilterType>("MONTH");
+    const [typeFilter, setTypeFilter] = useState<'ALL' | 'INCOME' | 'EXPENSE'>('ALL');
 
     const filteredTransactions = transactions
         .filter((t) => {
             // Text Search
             const matchesSearch = t.description.toLowerCase().includes(search.toLowerCase());
+
+            // Type Filter
+            let matchesType = true;
+            if (typeFilter !== 'ALL') {
+                matchesType = t.type === typeFilter;
+            }
 
             // Date Filter
             let matchesTime = true;
@@ -42,7 +49,7 @@ export default function HistoryPage() {
                 matchesTime = isSameYear(tDate, now);
             }
 
-            return matchesSearch && matchesTime;
+            return matchesSearch && matchesTime && matchesType;
         })
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
@@ -54,6 +61,14 @@ export default function HistoryPage() {
             default: return 'Todos';
         }
     };
+
+    const getTypeFilterLabel = (f: typeof typeFilter) => {
+        switch (f) {
+            case 'INCOME': return 'Ingresos';
+            case 'EXPENSE': return 'Gastos';
+            default: return 'Todos';
+        }
+    }
 
     return (
         <div className="space-y-6 pb-20 md:pb-0">
@@ -76,12 +91,15 @@ export default function HistoryPage() {
 
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="icon" className="shrink-0">
-                                <Filter className={`h-4 w-4 ${filter !== 'ALL' ? 'text-primary' : ''}`} />
+                            <Button variant="outline" size="icon" className="shrink-0 relative">
+                                <Filter className={`h-4 w-4 ${filter !== 'ALL' || typeFilter !== 'ALL' ? 'text-primary' : ''}`} />
+                                {(filter !== 'ALL' || typeFilter !== 'ALL') && (
+                                    <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-primary" />
+                                )}
                             </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Filtrar por fecha</DropdownMenuLabel>
+                        <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuLabel>Tiempo</DropdownMenuLabel>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={() => setFilter('ALL')}>
                                 <span className={filter === 'ALL' ? 'font-bold' : ''}>Todos</span>
@@ -99,26 +117,62 @@ export default function HistoryPage() {
                                 <span className={filter === 'YEAR' ? 'font-bold' : ''}>Este Año</span>
                                 {filter === 'YEAR' && <Check className="ml-auto h-4 w-4" />}
                             </DropdownMenuItem>
+
+                            <DropdownMenuSeparator />
+                            <DropdownMenuLabel>Tipo de Movimiento</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+
+                            <DropdownMenuItem onClick={() => setTypeFilter('ALL')}>
+                                <span className={typeFilter === 'ALL' ? 'font-bold' : ''}>Todos</span>
+                                {typeFilter === 'ALL' && <Check className="ml-auto h-4 w-4" />}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setTypeFilter('INCOME')}>
+                                <span className={typeFilter === 'INCOME' ? 'font-bold' : ''}>Ingresos</span>
+                                {typeFilter === 'INCOME' && <Check className="ml-auto h-4 w-4" />}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setTypeFilter('EXPENSE')}>
+                                <span className={typeFilter === 'EXPENSE' ? 'font-bold' : ''}>Gastos</span>
+                                {typeFilter === 'EXPENSE' && <Check className="ml-auto h-4 w-4" />}
+                            </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </div>
 
-                {filter !== 'ALL' && (
-                    <p className="text-xs text-muted-foreground">
-                        Mostrando transacciones de: <span className="font-medium text-foreground">{getFilterLabel(filter)}</span>
-                    </p>
+                {(filter !== 'ALL' || typeFilter !== 'ALL') && (
+                    <div className="flex flex-wrap gap-2">
+                        {filter !== 'ALL' && (
+                            <div className="text-xs px-2 py-1 bg-muted rounded-full flex items-center gap-1">
+                                <span>Periodo: {getFilterLabel(filter)}</span>
+                                <Button variant="ghost" size="icon" className="h-4 w-4 ml-1 rounded-full" onClick={() => setFilter('ALL')}>
+                                    <span className="sr-only">Quitar filtro</span>
+                                    &times;
+                                </Button>
+                            </div>
+                        )}
+                        {typeFilter !== 'ALL' && (
+                            <div className="text-xs px-2 py-1 bg-muted rounded-full flex items-center gap-1">
+                                <span>Tipo: {getTypeFilterLabel(typeFilter)}</span>
+                                <Button variant="ghost" size="icon" className="h-4 w-4 ml-1 rounded-full" onClick={() => setTypeFilter('ALL')}>
+                                    <span className="sr-only">Quitar filtro</span>
+                                    &times;
+                                </Button>
+                            </div>
+                        )}
+                    </div>
                 )}
             </header>
 
             <div className="space-y-4">
                 {filteredTransactions.length === 0 ? (
                     <div className="text-center py-10 border-2 border-dashed rounded-xl">
-                        <p className="text-muted-foreground">No hay transacciones en este periodo.</p>
-                        {filter !== 'ALL' && (
-                            <button onClick={() => setFilter('ALL')} className="text-sm text-primary hover:underline mt-2">
-                                Ver todas
-                            </button>
-                        )}
+                        <p className="text-muted-foreground">No hay transacciones con estos filtros.</p>
+                        <Button
+                            variant="link"
+                            onClick={() => { setFilter('ALL'); setTypeFilter('ALL'); }}
+                            className="mt-2"
+                        >
+                            Limpiar filtros
+                        </Button>
                     </div>
                 ) : (
                     <>
