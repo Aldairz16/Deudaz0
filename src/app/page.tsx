@@ -4,14 +4,17 @@ import { useStore } from "@/lib/store";
 import { WalletCard } from "@/components/wallets/wallet-card";
 import { WalletFormDialog } from "@/components/wallets/wallet-form-dialog";
 import { Button } from "@/components/ui/button";
-import { Plus, TrendingDown, TrendingUp, Wallet, Eye, EyeOff } from "lucide-react";
+import { Plus, TrendingDown, TrendingUp, Wallet, Eye, EyeOff, Settings } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/utils";
 import { useState } from "react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 
 export default function Home() {
-  const { wallets, debts, showBalances, toggleShowBalances } = useStore();
+  const { wallets, debts, showBalances, toggleShowBalances, user } = useStore();
 
   const totalWalletBalance = wallets.reduce((acc, curr) => acc + curr.balance, 0);
 
@@ -56,6 +59,44 @@ export default function Home() {
                 <Plus className="h-4 w-4" /> Billetera
               </Button>
             </WalletFormDialog>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="icon" className="rounded-full">
+                  <Settings className="h-5 w-5" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Configuración de Atajos (iOS)</DialogTitle>
+                  <DialogDescription>
+                    Usa estos valores para configurar tus Atajos de iOS y registrar gastos rápidamente.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-2">
+                  <div className="space-y-2">
+                    <Label>URL del Endpoint</Label>
+                    <div className="flex gap-2">
+                      <Input readOnly value={`${typeof window !== 'undefined' ? window.location.origin : ''}/api/shortcut/transaction`} />
+                      <Button variant="outline" size="icon" onClick={() => navigator.clipboard.writeText(`${window.location.origin}/api/shortcut/transaction`)}>
+                        📋
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>User ID</Label>
+                    <div className="flex gap-2">
+                      <Input readOnly value={user?.id || ''} />
+                      <Button variant="outline" size="icon" onClick={() => navigator.clipboard.writeText(user?.id || '')}>
+                        📋
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="p-3 bg-muted rounded-md text-xs text-muted-foreground">
+                    <strong>Nota:</strong> Necesitarás configurar una "Clave Secreta" en las variables de entorno de tu proyecto (SHORTCUT_API_SECRET) y usarla en tu Atajo.
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
 
