@@ -16,13 +16,22 @@ export async function POST(req: NextRequest) {
         const body = await req.json();
         const { amount, description, type, category, secret, email, wallet_name } = body;
 
-        // 1. Security Check
+        // Debug Logs
+        console.log('--- Shortcut API Request ---');
+        console.log('Received Body:', JSON.stringify(body));
         const validSecret = process.env.SHORTCUT_API_SECRET;
+
+        console.log(`Server Secret: "${validSecret}" (Length: ${validSecret?.length})`);
+        console.log(`Received Secret: "${secret}" (Length: ${secret?.length})`);
+
         if (!validSecret) {
+            console.error('Server Error: SHORTCUT_API_SECRET missing in env');
             return NextResponse.json({ error: 'Server misconfiguration: SHORTCUT_API_SECRET not set' }, { status: 500 });
         }
 
-        if (secret !== validSecret) {
+        // Trim comparison to avoid whitespace issues
+        if (!secret || secret.trim() !== validSecret.trim()) {
+            console.error('Auth Error: Secret comparison failed.');
             return NextResponse.json({ error: 'Unauthorized: Invalid Secret' }, { status: 401 });
         }
 
