@@ -4,13 +4,15 @@ import { useStore } from "@/lib/store";
 import { WalletCard } from "@/components/wallets/wallet-card";
 import { WalletFormDialog } from "@/components/wallets/wallet-form-dialog";
 import { Button } from "@/components/ui/button";
-import { Plus, TrendingDown, TrendingUp, Wallet } from "lucide-react";
+import { Plus, TrendingDown, TrendingUp, Wallet, Eye, EyeOff } from "lucide-react";
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/utils";
+import { useState } from "react";
 
 export default function Home() {
   const { wallets, debts } = useStore();
+  const [showBalances, setShowBalances] = useState(true);
 
   const totalWalletBalance = wallets.reduce((acc, curr) => acc + curr.balance, 0);
 
@@ -40,16 +42,31 @@ export default function Home() {
     }
   };
 
+  const displayAmount = (amount: number, currency: string = 'PEN') => {
+    if (!showBalances) return '••••••';
+    return formatCurrency(amount, currency);
+  };
+
   return (
     <div className="space-y-8 pb-20">
       <header className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold tracking-tight">Deudazo</h1>
-          <WalletFormDialog>
-            <Button size="sm" className="gap-1 rounded-full">
-              <Plus className="h-4 w-4" /> Billetera
+          <div className="flex gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="rounded-full"
+              onClick={() => setShowBalances(!showBalances)}
+            >
+              {showBalances ? <Eye className="h-5 w-5" /> : <EyeOff className="h-5 w-5" />}
             </Button>
-          </WalletFormDialog>
+            <WalletFormDialog>
+              <Button size="sm" className="gap-1 rounded-full">
+                <Plus className="h-4 w-4" /> Billetera
+              </Button>
+            </WalletFormDialog>
+          </div>
         </div>
 
         {/* Financial Summary Card */}
@@ -61,7 +78,7 @@ export default function Home() {
                 <p className="text-sm font-medium text-muted-foreground mb-1">Total Disponible para Gastar</p>
                 <div className="flex items-baseline gap-2">
                   <span className="text-4xl font-extrabold tracking-tighter text-blue-600 dark:text-blue-400">
-                    {formatCurrency(realAvailable, 'PEN')}
+                    {displayAmount(realAvailable)}
                   </span>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
@@ -77,7 +94,7 @@ export default function Home() {
                     <span className="text-xs font-semibold uppercase tracking-wider">Deudas</span>
                   </div>
                   <p className="text-lg font-bold tabular-nums">
-                    -{formatCurrency(totalPayables, 'PEN')}
+                    {showBalances ? `-${formatCurrency(totalPayables, 'PEN')}` : '••••••'}
                   </p>
                 </div>
 
@@ -88,7 +105,7 @@ export default function Home() {
                     <TrendingUp className="h-4 w-4" />
                   </div>
                   <p className="text-lg font-bold tabular-nums">
-                    +{formatCurrency(totalReceivables, 'PEN')}
+                    {showBalances ? `+${formatCurrency(totalReceivables, 'PEN')}` : '••••••'}
                   </p>
                 </div>
               </div>
@@ -101,7 +118,7 @@ export default function Home() {
                 Total en Billeteras
               </span>
               <span className="font-medium text-foreground">
-                {formatCurrency(totalWalletBalance, 'PEN')}
+                {displayAmount(totalWalletBalance)}
               </span>
             </div>
           </CardContent>
@@ -109,12 +126,12 @@ export default function Home() {
       </header>
 
       <section className="space-y-4">
-        <h2 className="text-xl font-semibold tracking-tight">My Wallets</h2>
+        <h2 className="text-xl font-semibold tracking-tight">Mis Billeteras</h2>
         {wallets.length === 0 ? (
           <div className="text-center py-10 border-2 border-dashed rounded-xl">
-            <p className="text-muted-foreground mb-4">No wallets found.</p>
+            <p className="text-muted-foreground mb-4">No tienes billeteras creadas.</p>
             <WalletFormDialog>
-              <Button variant="outline">Create your first wallet</Button>
+              <Button variant="outline">Crear mi primera billetera</Button>
             </WalletFormDialog>
           </div>
         ) : (
@@ -125,7 +142,13 @@ export default function Home() {
             className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-3"
           >
             {wallets.map((wallet) => (
-              <WalletCard key={wallet.id} wallet={wallet} />
+              <WalletCard
+                key={wallet.id}
+                wallet={wallet}
+                className={!showBalances ? "blur-sm transition-all hover:blur-none" : "transition-all"}
+              // Passing a prop or handling mask internally would be cleaner, but masking via class/blur is a quick visual hack.
+              // Better approach: pass a `hidden` prop to WalletCard if I can modify it.
+              />
             ))}
           </motion.div>
         )}

@@ -20,6 +20,7 @@ import { motion } from "framer-motion";
 
 interface WalletCardProps {
     wallet: Wallet
+    className?: string
 }
 
 const item = {
@@ -32,7 +33,7 @@ const item = {
     }
 } as const;
 
-export function WalletCard({ wallet }: WalletCardProps) {
+export function WalletCard({ wallet, className }: WalletCardProps) {
     const { deleteWallet } = useStore();
     const textColor = getContrastingTextColor(wallet.color);
 
@@ -40,7 +41,7 @@ export function WalletCard({ wallet }: WalletCardProps) {
         <motion.div
             variants={item}
             whileTap={{ scale: 0.92, transition: { duration: 0.1 } }}
-            className="w-full"
+            className={`w-full ${className || ''}`}
         >
             <Card
                 className="relative overflow-hidden border-0 aspect-[1.2/1] rounded-[24px]"
