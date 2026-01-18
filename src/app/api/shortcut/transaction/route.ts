@@ -113,29 +113,25 @@ export async function POST(req: NextRequest) {
         }
 
         // Normalize Transaction Type
-        let rawType = (type || 'EXPENSE').toString();
-        let normalizedType = rawType.toUpperCase().trim();
+        // DB expects lowercase 'expense' or 'income'
+        let rawType = (type || 'expense').toString();
+        let normalizedType = rawType.toLowerCase().trim();
 
-        console.log(`Raw Type: "${rawType}"`);
-
-        // Map common Spanish terms just in case
-        if (normalizedType.includes('GASTO') || normalizedType.includes('EGRESO')) normalizedType = 'EXPENSE';
-        if (normalizedType.includes('INGRESO')) normalizedType = 'INCOME';
+        // Map common Spanish terms
+        if (normalizedType.includes('gasto') || normalizedType.includes('egreso')) normalizedType = 'expense';
+        if (normalizedType.includes('ingreso')) normalizedType = 'income';
 
         // STRICT VALIDATION FALLBACK
-        // If it is neither EXPENSE nor INCOME, force EXPENSE to avoid DB crash
-        if (normalizedType !== 'INCOME' && normalizedType !== 'EXPENSE') {
-            console.warn(`Unknown type "${normalizedType}", defaulting to EXPENSE`);
-            normalizedType = 'EXPENSE';
+        if (normalizedType !== 'income' && normalizedType !== 'expense') {
+            console.warn(`Unknown type "${rawType}", defaulting to expense`);
+            normalizedType = 'expense';
         }
-
-        console.log(`Final Type: "${normalizedType}"`);
 
         // 4. Create Transaction
         const { data: transaction, error } = await supabaseAdmin
             .from('transactions')
             .insert({
-                user_id: userId, // Explicitly set user_id since we are admin
+                user_id: userId,
                 wallet_id: walletId,
                 amount: parseFloat(amount),
                 description: description || 'Movimiento rápido',
@@ -147,15 +143,14 @@ export async function POST(req: NextRequest) {
             .single();
 
         if (error) {
+            console.error('DB Insert Error:', error);
             throw error;
         }
 
         // 5. Update Wallet Balance
-        // We need to fetch current balance first to be safe, or use an RPC.
-        // Let's simple fetch-update.
         const { data: wallet } = await supabaseAdmin.from('wallets').select('balance').eq('id', walletId).single();
         if (wallet) {
-            const delta = normalizedType === 'INCOME' ? parseFloat(amount) : -parseFloat(amount);
+            const delta = normalizedType === 'income' ? parseFloat(amount) : -parseFloat(amount);
             const newBalance = wallet.balance + delta;
             await supabaseAdmin.from('wallets').update({ balance: newBalance }).eq('id', walletId);
         }
