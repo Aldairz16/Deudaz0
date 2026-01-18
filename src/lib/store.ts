@@ -61,16 +61,28 @@ export const useStore = create<AppState>((set, get) => ({
         // Fetch Debts
         const { data: debts } = await supabase.from('debts').select('*').order('created_at', { ascending: false });
 
-        if (wallets) set({ wallets: wallets as Wallet[] });
+        if (wallets) set({ wallets: wallets.map(w => ({ ...w, creditLimit: w.credit_limit, type: w.type as 'DEBIT' | 'CREDIT' })) as Wallet[] });
         if (transactions) set({ transactions: transactions.map(mapDBTransaction) });
         if (debtCategories) set({ debtCategories: debtCategories as DebtCategory[] });
         if (debts) set({ debts: debts.map(mapDBDebt) });
     },
 
-    addWallet: async (name, color) => {
+    addWallet: async (name, color, type = 'DEBIT', creditLimit, initialBalance = 0) => {
+        const dbWallet: any = {
+            name,
+            color,
+            balance: initialBalance,
+            currency: 'PEN',
+            type: type
+        };
+
+        if (type === 'CREDIT' && creditLimit !== undefined) {
+            dbWallet.credit_limit = creditLimit;
+        }
+
         const { data, error } = await supabase
             .from('wallets')
-            .insert({ name, color, balance: 0, currency: 'PEN' })
+            .insert(dbWallet)
             .select()
             .single();
 
@@ -79,7 +91,18 @@ export const useStore = create<AppState>((set, get) => ({
             return;
         }
 
-        set((state) => ({ wallets: [...state.wallets, data as Wallet] }));
+        // We need to map the DB response back to our Wallet type if column names differ
+        // For now, assuming type and credit_limit map automatically if we cast or map manually?
+        // Let's ensure strict mapping if needed, but 'as Wallet' might hide misses.
+        // Let's modify the Wallet mapper if we had one. We don't have one for Wallet yet.
+        // Ideally we should make a mapDBWallet function but for speed:
+        const newWallet: Wallet = {
+            ...data,
+            creditLimit: data.credit_limit, // Map snake_case to camelCase
+            type: data.type as 'DEBIT' | 'CREDIT' // Ensure type cast
+        };
+
+        set((state) => ({ wallets: [...state.wallets, newWallet] }));
     },
 
     updateWallet: async (id, updates) => {

@@ -14,9 +14,14 @@ export default function Home() {
 
   const totalWalletBalance = wallets.reduce((acc, curr) => acc + curr.balance, 0);
 
+  // Calculate used credit from Credit Cards
+  const totalCreditUsed = wallets
+    .filter(w => w.type === 'CREDIT' && w.creditLimit)
+    .reduce((acc, w) => acc + ((w.creditLimit || 0) - w.balance), 0);
+
   const totalPayables = debts
     .filter(d => d.type === 'PAYABLE' && d.status === 'PENDING')
-    .reduce((acc, d) => acc + d.amount, 0);
+    .reduce((acc, d) => acc + d.amount, 0) + totalCreditUsed;
 
   const totalReceivables = debts
     .filter(d => d.type === 'RECEIVABLE' && d.status === 'PENDING')

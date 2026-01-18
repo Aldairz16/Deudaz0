@@ -7,6 +7,8 @@ export interface Wallet {
     color: string;
     balance: number;
     currency: Currency;
+    type: 'DEBIT' | 'CREDIT';
+    creditLimit?: number; // Only for CREDIT wallets
     created_at?: string;
 }
 
@@ -46,7 +48,7 @@ export interface AppState {
     // Actions
     fetchData: () => Promise<void>;
 
-    addWallet: (name: string, color: string) => Promise<void>;
+    addWallet: (name: string, color: string, type?: 'DEBIT' | 'CREDIT', creditLimit?: number, initialBalance?: number) => Promise<void>;
     updateWallet: (id: string, updates: Partial<Wallet>) => Promise<void>;
     deleteWallet: (id: string) => Promise<void>;
 

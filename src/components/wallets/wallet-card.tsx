@@ -60,12 +60,12 @@ export function WalletCard({ wallet }: WalletCardProps) {
                                 {wallet.name}
                             </h3>
                             <p className="text-xs font-medium uppercase tracking-wider opacity-80" style={{ color: textColor }}>
-                                Billetera
+                                {wallet.type === 'CREDIT' ? 'Tarjeta de Crédito' : 'Billetera'}
                             </p>
                         </div>
 
                         <div className="flex items-center -mr-2 -mt-2 shrink-0 pointer-events-auto relative z-10">
-                            {/* Adjustment Trigger */}
+                            {/* Adjustment Trigger - Only showing standard tools for now, maybe custom "Pay" for Credit later */}
                             <BalanceAdjustmentDialog wallet={wallet}>
                                 <Button variant="ghost" size="icon" className="h-7 w-7 hover:bg-black/10 dark:hover:bg-white/10" style={{ color: textColor }}>
                                     <ArrowLeftRight className="h-3.5 w-3.5" />
@@ -100,11 +100,35 @@ export function WalletCard({ wallet }: WalletCardProps) {
                         </div>
                     </div>
 
-                    <div className="pointer-events-none relative z-0 mt-auto">
-                        <p className="text-[10px] opacity-80 mb-0.5" style={{ color: textColor }}>Balance</p>
-                        <div className="text-lg font-bold tracking-tight truncate" style={{ color: textColor }}>
-                            {wallet.currency} {wallet.balance.toFixed(2)}
-                        </div>
+                    <div className="pointer-events-none relative z-0 mt-auto space-y-2">
+                        {wallet.type === 'CREDIT' && wallet.creditLimit ? (
+                            <div className="space-y-1">
+                                <div className="flex justify-between text-[10px] opacity-90 font-medium">
+                                    <span>Disp: {formatCurrency(wallet.balance, wallet.currency)}</span>
+                                    <span>Límite: {formatCurrency(wallet.creditLimit, wallet.currency)}</span>
+                                </div>
+                                {/* Progress Bar for Usage (Used / Limit) */}
+                                <div className="h-1.5 w-full bg-black/20 rounded-full overflow-hidden">
+                                    <div
+                                        className="h-full bg-current opacity-90 transition-all duration-500"
+                                        style={{
+                                            width: `${Math.min(100, Math.max(0, ((wallet.creditLimit - wallet.balance) / wallet.creditLimit) * 100))}%`
+                                        }}
+                                    />
+                                </div>
+                                <div className="flex justify-end text-[10px] font-bold">
+                                    <span className="opacity-70 mr-1">Usado:</span>
+                                    <span>{formatCurrency(wallet.creditLimit - wallet.balance, wallet.currency)}</span>
+                                </div>
+                            </div>
+                        ) : (
+                            <div>
+                                <p className="text-[10px] opacity-80 mb-0.5" style={{ color: textColor }}>Balance</p>
+                                <div className="text-lg font-bold tracking-tight truncate" style={{ color: textColor }}>
+                                    {wallet.currency} {wallet.balance.toFixed(2)}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </Card>
