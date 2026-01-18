@@ -49,7 +49,7 @@ export function WalletCard({ wallet, className }: WalletCardProps) {
                                 {wallet.name}
                             </h3>
                             <p className="text-xs font-medium uppercase tracking-wider opacity-80" style={{ color: textColor }}>
-                                {wallet.type === 'CREDIT' ? 'Tarjeta de Crédito' : 'Billetera'}
+                                {wallet.category || (wallet.type === 'CREDIT' ? 'Tarjeta de Crédito' : 'Billetera')}
                             </p>
                         </div>
 
@@ -112,7 +112,7 @@ export function WalletCard({ wallet, className }: WalletCardProps) {
                             </div>
                         ) : (
                             <div>
-                                <p className="text-[10px] opacity-80 mb-0.5" style={{ color: textColor }}>Balance</p>
+                                <p className="text-[10px] opacity-80 mb-0.5" style={{ color: textColor }}>Disponible</p>
                                 <div className="text-lg font-bold tracking-tight truncate" style={{ color: textColor }}>
                                     {wallet.currency} {wallet.balance.toFixed(2)}
                                 </div>

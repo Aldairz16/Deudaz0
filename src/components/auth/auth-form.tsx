@@ -35,7 +35,7 @@ export function AuthForm() {
                 })
                 if (error) throw error
                 // Auto sign in or show message
-                alert("Registro exitoso! Por favor inicia sesión.")
+                alert("Registro exitoso! Se ha enviado un correo de verificación. Por favor verifica tu email antes de iniciar sesión.")
                 setIsSignUp(false)
             } else {
                 const { error } = await supabase.auth.signInWithPassword({

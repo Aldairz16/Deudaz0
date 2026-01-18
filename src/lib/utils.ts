@@ -6,10 +6,14 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatCurrency(amount: number, currency: string = 'PEN') {
-  return new Intl.NumberFormat('es-PE', {
-    style: 'currency',
-    currency: currency,
-  }).format(amount);
+  try {
+    return new Intl.NumberFormat('es-PE', {
+      style: 'currency',
+      currency: currency || 'PEN',
+    }).format(amount || 0);
+  } catch (error) {
+    return `${currency} ${(amount || 0).toFixed(2)}`;
+  }
 }
 
 export function getContrastingTextColor(hexColor: string) {

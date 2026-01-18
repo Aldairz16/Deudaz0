@@ -75,7 +75,7 @@ export const useStore = create<AppState>((set, get) => ({
         const { data: debts } = await supabase.from('debts').select('*').order('created_at', { ascending: false });
 
         // Fetch Transaction Templates
-        const { data: templates } = await supabase.from('transaction_templates').select('*');
+        const { data: templates } = await supabase.from('transaction_templates').select('*').eq('user_id', user.id);
 
         if (wallets) set({
             wallets: wallets.map(w => ({
@@ -285,7 +285,11 @@ export const useStore = create<AppState>((set, get) => ({
 
     // Transaction Templates
     addTransactionTemplate: async (template) => {
+        const user = get().user;
+        if (!user) return;
+
         const dbTemplate = {
+            user_id: user.id,
             name: template.name,
             amount: template.amount,
             description: template.description,
