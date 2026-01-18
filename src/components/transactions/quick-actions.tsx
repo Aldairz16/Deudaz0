@@ -44,6 +44,8 @@ export function QuickActionsPanel() {
     const { transactionTemplates, addTransactionTemplate, deleteTransactionTemplate, addTransaction, wallets } = useStore();
     const [open, setOpen] = useState(false);
     const [executingId, setExecutingId] = useState<string | null>(null);
+    const [selectionOpen, setSelectionOpen] = useState(false);
+    const [pendingTemplate, setPendingTemplate] = useState<any | null>(null);
 
     // Form for creating template
     const form = useForm<z.infer<typeof templateSchema>>({
@@ -71,22 +73,22 @@ export function QuickActionsPanel() {
     }
 
     async function handleExecute(template: any) {
-        if (!template.walletId && wallets.length > 0) {
-            // If no wallet assigned, ideally prompt properly.
-            // For now, if no wallet, we can't execute automatically safely without complex UI.
-            // Let's alert user or pick default? 
-            // Logic: Pick first wallet of suitable type? No risky.
-            // Let's just alert "Editar plantilla para asignar billetera".
-            alert("Esta plantilla no tiene billetera asignada. Edítala o crea una nueva con billetera.");
+        if (!template.walletId) {
+            // If no wallet assigned, open selection dialog
+            setPendingTemplate(template);
+            setSelectionOpen(true);
             return;
         }
 
-        if (!template.walletId) return;
+        executeTransaction(template, template.walletId);
+    }
 
+    async function executeTransaction(template: any, walletId: string) {
         setExecutingId(template.id);
+        setSelectionOpen(false);
         try {
             await addTransaction({
-                walletId: template.walletId,
+                walletId: walletId,
                 amount: template.amount,
                 type: template.type,
                 description: template.description,
@@ -98,6 +100,7 @@ export function QuickActionsPanel() {
             console.error(e);
         } finally {
             setExecutingId(null);
+            setPendingTemplate(null);
         }
     }
 
@@ -122,7 +125,7 @@ export function QuickActionsPanel() {
                         <div className="text-xs text-muted-foreground truncate w-full">
                             {template.walletId
                                 ? wallets.find(w => w.id === template.walletId)?.name || "Wallet eliminada"
-                                : "Sin billetera asignada"}
+                                : "Seleccionar al ejecutar"}
                         </div>
 
                         <button
@@ -244,6 +247,37 @@ export function QuickActionsPanel() {
                                 <Button type="submit" className="w-full">Guardar Acción Rápida</Button>
                             </form>
                         </Form>
+                    </DialogContent>
+                </Dialog>
+                {/* Selection Dialog */}
+                <Dialog open={selectionOpen} onOpenChange={setSelectionOpen}>
+                    <DialogContent className="sm:max-w-md">
+                        <DialogHeader>
+                            <DialogTitle>Seleccionar Billetera</DialogTitle>
+                            <DialogDescription>
+                                ¿Con qué billetera quieres pagar "{pendingTemplate?.name}"?
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="grid gap-2 py-4">
+                            {wallets.map((wallet) => (
+                                <Button
+                                    key={wallet.id}
+                                    variant="outline"
+                                    className="justify-start h-auto py-3 px-4"
+                                    onClick={() => pendingTemplate && executeTransaction(pendingTemplate, wallet.id)}
+                                >
+                                    <div className="flex flex-col items-start gap-1">
+                                        <div className="font-semibold flex items-center gap-2">
+                                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: wallet.color }} />
+                                            {wallet.name}
+                                        </div>
+                                        <span className="text-xs text-muted-foreground">
+                                            {formatCurrency(wallet.balance, wallet.currency)}
+                                        </span>
+                                    </div>
+                                </Button>
+                            ))}
+                        </div>
                     </DialogContent>
                 </Dialog>
             </div>
