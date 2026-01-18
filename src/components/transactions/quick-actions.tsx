@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useStore } from "@/lib/store"
 import { Button } from "@/components/ui/button"
-import { Plus, Wallet, Zap, Trash2 } from "lucide-react"
+import { Plus, Wallet, Zap, Trash2, Pencil } from "lucide-react"
 import {
     Dialog,
     DialogContent,
@@ -41,11 +41,12 @@ const templateSchema = z.object({
 })
 
 export function QuickActionsPanel() {
-    const { transactionTemplates, addTransactionTemplate, deleteTransactionTemplate, addTransaction, wallets } = useStore();
+    const { transactionTemplates, addTransactionTemplate, updateTransactionTemplate, deleteTransactionTemplate, addTransaction, wallets } = useStore();
     const [open, setOpen] = useState(false);
     const [executingId, setExecutingId] = useState<string | null>(null);
     const [selectionOpen, setSelectionOpen] = useState(false);
     const [pendingTemplate, setPendingTemplate] = useState<any | null>(null);
+    const [editingTemplate, setEditingTemplate] = useState<any | null>(null);
 
     // Form for creating template
     const form = useForm<z.infer<typeof templateSchema>>({
@@ -58,18 +59,57 @@ export function QuickActionsPanel() {
         },
     });
 
-    async function onCreateTemplate(values: z.infer<typeof templateSchema>) {
-        await addTransactionTemplate({
-            name: values.name,
-            amount: values.amount,
-            description: values.description || values.name,
-            type: values.type,
-            walletId: values.walletId === "NONE" ? undefined : values.walletId,
-            category: values.category,
-            icon: "zap"
-        });
+    async function onSubmit(values: z.infer<typeof templateSchema>) {
+        if (editingTemplate) {
+            await updateTransactionTemplate(editingTemplate.id, {
+                name: values.name,
+                amount: values.amount,
+                description: values.description || values.name,
+                type: values.type,
+                walletId: values.walletId === "NONE" ? undefined : values.walletId,
+                category: values.category,
+                icon: "zap"
+            });
+        } else {
+            await addTransactionTemplate({
+                name: values.name,
+                amount: values.amount,
+                description: values.description || values.name,
+                type: values.type,
+                walletId: values.walletId === "NONE" ? undefined : values.walletId,
+                category: values.category,
+                icon: "zap"
+            });
+        }
         setOpen(false);
+        setEditingTemplate(null);
         form.reset();
+    }
+
+    const openCreate = () => {
+        setEditingTemplate(null);
+        form.reset({
+            name: "",
+            amount: 0,
+            description: "",
+            type: "EXPENSE",
+            walletId: "NONE",
+            category: ""
+        });
+        setOpen(true);
+    };
+
+    const openEdit = (template: any) => {
+        setEditingTemplate(template);
+        form.reset({
+            name: template.name,
+            amount: template.amount,
+            description: template.description,
+            type: template.type,
+            walletId: template.walletId || "NONE",
+            category: template.category || ""
+        });
+        setOpen(true);
     }
 
     async function handleExecute(template: any) {
@@ -128,36 +168,47 @@ export function QuickActionsPanel() {
                                 : "Seleccionar al ejecutar"}
                         </div>
 
-                        <button
-                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 p-1 hover:bg-destructive/10 hover:text-destructive rounded transition-all"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                if (confirm("¿Eliminar acción rápida?")) {
-                                    deleteTransactionTemplate(template.id);
-                                }
-                            }}
-                        >
-                            <Trash2 className="h-4 w-4" />
-                        </button>
+                        <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                            <button
+                                className="p-1 hover:bg-black/10 dark:hover:bg-white/10 rounded"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    openEdit(template);
+                                }}
+                            >
+                                <Pencil className="h-4 w-4" />
+                            </button>
+                            <button
+                                className="p-1 hover:bg-destructive/10 hover:text-destructive rounded"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (confirm("¿Eliminar acción rápida?")) {
+                                        deleteTransactionTemplate(template.id);
+                                    }
+                                }}
+                            >
+                                <Trash2 className="h-4 w-4" />
+                            </button>
+                        </div>
                     </div>
                 ))}
 
                 <Dialog open={open} onOpenChange={setOpen}>
                     <DialogTrigger asChild>
-                        <Button variant="outline" className="h-full min-h-[120px] flex flex-col gap-2 border-dashed hover:border-primary hover:bg-primary/5">
+                        <Button variant="outline" className="h-full min-h-[120px] flex flex-col gap-2 border-dashed hover:border-primary hover:bg-primary/5" onClick={openCreate}>
                             <Plus className="h-6 w-6" />
                             <span>Crear Nuevo</span>
                         </Button>
                     </DialogTrigger>
                     <DialogContent>
                         <DialogHeader>
-                            <DialogTitle>Nueva Acción Rápida</DialogTitle>
+                            <DialogTitle>{editingTemplate ? "Editar Acción Rápida" : "Nueva Acción Rápida"}</DialogTitle>
                             <DialogDescription>
                                 Crea un botón para registrar gastos o ingresos frecuentes con un solo toque.
                             </DialogDescription>
                         </DialogHeader>
                         <Form {...form}>
-                            <form onSubmit={form.handleSubmit(onCreateTemplate)} className="space-y-4">
+                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                                 <FormField
                                     control={form.control as any}
                                     name="name"
@@ -244,7 +295,7 @@ export function QuickActionsPanel() {
                                     )}
                                 />
 
-                                <Button type="submit" className="w-full">Guardar Acción Rápida</Button>
+                                <Button type="submit" className="w-full">{editingTemplate ? "Guardar Cambios" : "Guardar Acción Rápida"}</Button>
                             </form>
                         </Form>
                     </DialogContent>

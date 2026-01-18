@@ -309,6 +309,27 @@ export const useStore = create<AppState>((set, get) => ({
         }
     },
 
+    updateTransactionTemplate: async (id, updates) => {
+        const dbUpdates: any = {};
+        if (updates.name) dbUpdates.name = updates.name;
+        if (updates.amount !== undefined) dbUpdates.amount = updates.amount;
+        if (updates.description) dbUpdates.description = updates.description;
+        if (updates.type) dbUpdates.type = updates.type.toLowerCase();
+        if (updates.walletId !== undefined) dbUpdates.wallet_id = updates.walletId; // Allow setting to null/undefined if passed
+        if (updates.category !== undefined) dbUpdates.category = updates.category;
+        if (updates.icon) dbUpdates.icon = updates.icon;
+
+        const { error } = await supabase.from('transaction_templates').update(dbUpdates).eq('id', id);
+
+        if (!error) {
+            set((state) => ({
+                transactionTemplates: state.transactionTemplates.map(t => t.id === id ? { ...t, ...updates } : t)
+            }));
+        } else {
+            console.error("Error updating template:", error);
+        }
+    },
+
     deleteTransactionTemplate: async (id) => {
         const { error } = await supabase.from('transaction_templates').delete().eq('id', id);
         if (!error) {

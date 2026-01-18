@@ -69,6 +69,7 @@ export interface AppState {
 
     // Templates (Quick Actions)
     addTransactionTemplate: (template: Omit<TransactionTemplate, 'id'>) => Promise<void>;
+    updateTransactionTemplate: (id: string, updates: Partial<TransactionTemplate>) => Promise<void>;
     deleteTransactionTemplate: (id: string) => Promise<void>;
 
     // Deudas
