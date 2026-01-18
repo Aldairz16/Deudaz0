@@ -9,6 +9,7 @@ export interface Wallet {
     currency: Currency;
     type: 'DEBIT' | 'CREDIT';
     creditLimit?: number; // Only for CREDIT wallets
+    category?: string; // e.g. "Efectivo", "Banco", "Digital"
     created_at?: string;
 }
 
@@ -17,8 +18,7 @@ export type TransactionType = 'INCOME' | 'EXPENSE' | 'ADJUSTMENT' | 'TRANSFER';
 export interface Transaction {
     id: string;
     user_id?: string;
-    walletId: string; // This maps to wallet_id in DB. I might need a mapper.
-    // wallet_id: string; // Let's try to align with DB or use camelCase mapper
+    walletId: string;
     amount: number;
     description: string;
     type: TransactionType;
@@ -28,7 +28,17 @@ export interface Transaction {
     created_at?: string;
 }
 
-// Helper to match DB
+export interface TransactionTemplate {
+    id: string;
+    name: string;
+    amount: number;
+    description: string;
+    type: TransactionType;
+    walletId?: string; // Optional default wallet
+    category?: string;
+    icon?: string;
+}
+
 export interface DBTransaction {
     id: string;
     user_id: string;
@@ -44,17 +54,22 @@ export interface DBTransaction {
 export interface AppState {
     wallets: Wallet[];
     transactions: Transaction[];
+    transactionTemplates: TransactionTemplate[];
 
     // Actions
     fetchData: () => Promise<void>;
 
-    addWallet: (name: string, color: string, type?: 'DEBIT' | 'CREDIT', creditLimit?: number, initialBalance?: number) => Promise<void>;
+    addWallet: (name: string, color: string, type?: 'DEBIT' | 'CREDIT', creditLimit?: number, initialBalance?: number, category?: string) => Promise<void>;
     updateWallet: (id: string, updates: Partial<Wallet>) => Promise<void>;
     deleteWallet: (id: string) => Promise<void>;
 
     addTransaction: (transaction: Omit<Transaction, 'id'>) => Promise<void>;
     deleteTransaction: (id: string) => Promise<void>;
     updateTransaction: (id: string, updates: Partial<Transaction>) => Promise<void>;
+
+    // Templates (Quick Actions)
+    addTransactionTemplate: (template: Omit<TransactionTemplate, 'id'>) => Promise<void>;
+    deleteTransactionTemplate: (id: string) => Promise<void>;
 
     // Deudas
     debts: Debt[];

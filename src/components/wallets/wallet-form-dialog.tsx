@@ -28,6 +28,7 @@ import { useState, useEffect } from "react"
 import { cn } from "@/lib/utils"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Wallet } from "@/types"
+import { Badge } from "@/components/ui/badge"
 
 const formSchema = z.object({
     name: z.string().min(1, "Name is required"),
@@ -35,6 +36,7 @@ const formSchema = z.object({
     type: z.enum(['DEBIT', 'CREDIT']),
     creditLimit: z.coerce.number().optional(),
     currentBalance: z.coerce.number().optional(), // For Debit: Balance. For Credit: AVAILABLE Balance.
+    category: z.string().optional(),
 })
 
 type WalletFormValues = z.infer<typeof formSchema>;
@@ -60,20 +62,33 @@ const COLORS = [
     "#71717A", // Zinc
 ];
 
+const SUGGESTED_CATEGORIES = [
+    { label: "Efectivo", type: 'DEBIT' },
+    { label: "Tarjeta de Débito", type: 'DEBIT' },
+    { label: "Tarjeta de Crédito", type: 'CREDIT' },
+    { label: "Billetera Digital", type: 'DEBIT' },
+    { label: "Cuenta de Ahorros", type: 'DEBIT' },
+    { label: "Inversión", type: 'DEBIT' },
+];
+
 export function WalletFormDialog({ children, mode = 'create', defaultValues }: WalletFormDialogProps) {
     const [open, setOpen] = useState(false);
     const { addWallet, updateWallet } = useStore();
 
     const form = useForm<WalletFormValues>({
-        resolver: zodResolver(formSchema),
+        resolver: zodResolver(formSchema) as any,
         defaultValues: {
             name: "",
             color: COLORS[0],
             type: 'DEBIT',
             creditLimit: 0,
             currentBalance: 0,
+            category: "General",
         },
     });
+
+    const type = form.watch('type');
+    const category = form.watch('category');
 
     // Reset form when dialog opens or defaults change
     useEffect(() => {
@@ -84,6 +99,7 @@ export function WalletFormDialog({ children, mode = 'create', defaultValues }: W
                 type: defaultValues?.type || 'DEBIT',
                 creditLimit: defaultValues?.creditLimit || 0,
                 currentBalance: defaultValues?.balance || 0,
+                category: defaultValues?.category || "General",
             });
         }
     }, [open, defaultValues, form]);
@@ -95,20 +111,20 @@ export function WalletFormDialog({ children, mode = 'create', defaultValues }: W
                 values.color,
                 values.type,
                 values.creditLimit || 0,
-                values.currentBalance || 0
+                values.currentBalance || 0,
+                values.category
             );
         } else if (mode === 'edit' && defaultValues?.id) {
             updateWallet(defaultValues.id, {
                 name: values.name,
                 color: values.color,
                 creditLimit: values.creditLimit,
+                category: values.category,
             });
         }
         setOpen(false);
         form.reset();
     }
-
-    const type = form.watch('type');
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
@@ -119,23 +135,23 @@ export function WalletFormDialog({ children, mode = 'create', defaultValues }: W
                 <DialogHeader>
                     <DialogTitle>{mode === 'create' ? 'Crear Billetera' : 'Editar Billetera'}</DialogTitle>
                     <DialogDescription>
-                        {mode === 'create' ? 'Agrega una nueva billetera o tarjeta.' : 'Actualiza los detalles.'}
+                        {mode === 'create' ? 'Personaliza tu billetera o tarjeta.' : 'Actualiza los detalles.'}
                     </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
 
-                        {/* Type Selection */}
+                        {/* Type Selection (Behavior) */}
                         <FormField
                             control={form.control as any}
                             name="type"
                             render={({ field }) => (
                                 <FormItem className="space-y-3">
-                                    <FormLabel>Tipo</FormLabel>
+                                    <FormLabel>Comportamiento Financiero</FormLabel>
                                     <FormControl>
                                         <RadioGroup
                                             onValueChange={field.onChange}
-                                            defaultValue={field.value}
+                                            value={field.value}
                                             className="flex gap-4"
                                             disabled={mode === 'edit'}
                                         >
@@ -143,20 +159,55 @@ export function WalletFormDialog({ children, mode = 'create', defaultValues }: W
                                                 <FormControl>
                                                     <RadioGroupItem value="DEBIT" />
                                                 </FormControl>
-                                                <FormLabel className="font-normal cursor-pointer">
-                                                    Efectivo / Débito
+                                                <FormLabel className="font-normal cursor-pointer text-xs">
+                                                    Débito / Efectivo
                                                 </FormLabel>
                                             </FormItem>
                                             <FormItem className="flex items-center space-x-2 space-y-0">
                                                 <FormControl>
                                                     <RadioGroupItem value="CREDIT" />
                                                 </FormControl>
-                                                <FormLabel className="font-normal cursor-pointer">
-                                                    Tarjeta de Crédito
+                                                <FormLabel className="font-normal cursor-pointer text-xs">
+                                                    Crédito (Deuda)
                                                 </FormLabel>
                                             </FormItem>
                                         </RadioGroup>
                                     </FormControl>
+                                </FormItem>
+                            )}
+                        />
+
+                        {/* Category Selection */}
+                        <FormField
+                            control={form.control as any}
+                            name="category"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Categoría</FormLabel>
+                                    <FormControl>
+                                        <div className="space-y-3">
+                                            <Input placeholder="Escribe o selecciona una categoría" {...field} />
+                                            <div className="flex flex-wrap gap-2">
+                                                {SUGGESTED_CATEGORIES.map((cat) => (
+                                                    <Badge
+                                                        key={cat.label}
+                                                        variant={field.value === cat.label ? "default" : "outline"}
+                                                        className="cursor-pointer hover:bg-primary/90 hover:text-primary-foreground transition-colors"
+                                                        onClick={() => {
+                                                            field.onChange(cat.label);
+                                                            // Auto-switch type if creating
+                                                            if (mode === 'create') {
+                                                                form.setValue('type', cat.type as 'DEBIT' | 'CREDIT');
+                                                            }
+                                                        }}
+                                                    >
+                                                        {cat.label}
+                                                    </Badge>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </FormControl>
+                                    <FormMessage />
                                 </FormItem>
                             )}
                         />
@@ -168,7 +219,7 @@ export function WalletFormDialog({ children, mode = 'create', defaultValues }: W
                                 <FormItem>
                                     <FormLabel>Nombre</FormLabel>
                                     <FormControl>
-                                        <Input placeholder={type === 'CREDIT' ? "Ej. Visa Oro, MasterCard" : "Ej. Efectivo, BCP Ahorros"} {...field} />
+                                        <Input placeholder={type === 'CREDIT' ? "Ej. Visa Oro" : "Ej. Billetera Personal"} {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -204,11 +255,6 @@ export function WalletFormDialog({ children, mode = 'create', defaultValues }: W
                                         <FormControl>
                                             <Input type="number" step="0.01" placeholder="0.00" {...field} />
                                         </FormControl>
-                                        {type === 'CREDIT' && (
-                                            <FormDescription>
-                                                ¿Cuánto puedes gastar ahora mismo? (Límite - Deuda Actual)
-                                            </FormDescription>
-                                        )}
                                         <FormMessage />
                                     </FormItem>
                                 )}

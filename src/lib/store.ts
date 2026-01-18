@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase';
-import { AppState, Wallet, Transaction, Debt, DebtCategory } from '@/types';
+import { AppState, Wallet, Transaction, Debt, DebtCategory, TransactionTemplate } from '@/types';
 
 // Helper to map DB transaction to App Transaction
 const mapDBTransaction = (t: any): Transaction => ({
@@ -29,9 +29,22 @@ const mapDBDebt = (d: any): Debt => ({
 });
 
 
+// Helper to map DB Template
+const mapDBTemplate = (t: any): TransactionTemplate => ({
+    id: t.id,
+    name: t.name,
+    amount: t.amount,
+    description: t.description,
+    type: t.type.toUpperCase() as any,
+    walletId: t.wallet_id,
+    category: t.category,
+    icon: t.icon
+});
+
 export const useStore = create<AppState>((set, get) => ({
     wallets: [],
     transactions: [],
+    transactionTemplates: [],
     debts: [],
     debtCategories: [],
     user: null,
@@ -41,7 +54,7 @@ export const useStore = create<AppState>((set, get) => ({
         if (user) {
             get().fetchData();
         } else {
-            set({ wallets: [], transactions: [], debts: [], debtCategories: [] });
+            set({ wallets: [], transactions: [], debts: [], debtCategories: [], transactionTemplates: [] });
         }
     },
 
@@ -61,19 +74,32 @@ export const useStore = create<AppState>((set, get) => ({
         // Fetch Debts
         const { data: debts } = await supabase.from('debts').select('*').order('created_at', { ascending: false });
 
-        if (wallets) set({ wallets: wallets.map(w => ({ ...w, creditLimit: w.credit_limit, type: w.type as 'DEBIT' | 'CREDIT' })) as Wallet[] });
+        // Fetch Transaction Templates
+        const { data: templates } = await supabase.from('transaction_templates').select('*');
+
+        if (wallets) set({
+            wallets: wallets.map(w => ({
+                ...w,
+                creditLimit: w.credit_limit,
+                type: w.type as 'DEBIT' | 'CREDIT',
+                category: w.category // New field
+            })) as Wallet[]
+        });
+
         if (transactions) set({ transactions: transactions.map(mapDBTransaction) });
         if (debtCategories) set({ debtCategories: debtCategories as DebtCategory[] });
         if (debts) set({ debts: debts.map(mapDBDebt) });
+        if (templates) set({ transactionTemplates: templates.map(mapDBTemplate) });
     },
 
-    addWallet: async (name, color, type = 'DEBIT', creditLimit, initialBalance = 0) => {
+    addWallet: async (name, color, type = 'DEBIT', creditLimit, initialBalance = 0, category = 'General') => {
         const dbWallet: any = {
             name,
             color,
             balance: initialBalance,
             currency: 'PEN',
-            type: type
+            type: type,
+            category: category // New field
         };
 
         if (type === 'CREDIT' && creditLimit !== undefined) {
@@ -91,15 +117,11 @@ export const useStore = create<AppState>((set, get) => ({
             return;
         }
 
-        // We need to map the DB response back to our Wallet type if column names differ
-        // For now, assuming type and credit_limit map automatically if we cast or map manually?
-        // Let's ensure strict mapping if needed, but 'as Wallet' might hide misses.
-        // Let's modify the Wallet mapper if we had one. We don't have one for Wallet yet.
-        // Ideally we should make a mapDBWallet function but for speed:
         const newWallet: Wallet = {
             ...data,
-            creditLimit: data.credit_limit, // Map snake_case to camelCase
-            type: data.type as 'DEBIT' | 'CREDIT' // Ensure type cast
+            creditLimit: data.credit_limit,
+            type: data.type as 'DEBIT' | 'CREDIT',
+            category: data.category
         };
 
         set((state) => ({ wallets: [...state.wallets, newWallet] }));
@@ -150,12 +172,6 @@ export const useStore = create<AppState>((set, get) => ({
             return;
         }
 
-        // We also need to update the wallet balance in the Store logic?
-        // Ideally we should use a Database Function (RPC) or Trigger to update balance to be atomic.
-        // But for now, let's keep the logic on client side or just manually update wallet in DB too.
-        // The previous local store logic updated the wallet balance. 
-        // Let's replicate that logic with DB updates.
-
         const wallet = get().wallets.find(w => w.id === transactionData.walletId);
         if (wallet) {
             let newBalance = wallet.balance;
@@ -190,10 +206,6 @@ export const useStore = create<AppState>((set, get) => ({
         // Revert balance
         const wallet = get().wallets.find(w => w.id === transaction.walletId);
         if (wallet) {
-            // Logic: If INCOME, we subtract. If EXPENSE, we add. 
-            // Adjustment: This is tricky. We can't easily revert adjustment without knowing previous balance.
-            // For now let's just ignore adjustment revert or assume user fixes it manually.
-
             if (transaction.type !== 'ADJUSTMENT') {
                 const delta = transaction.type === 'INCOME' ? -transaction.amount : transaction.amount;
                 const newBalance = wallet.balance + delta;
@@ -220,11 +232,9 @@ export const useStore = create<AppState>((set, get) => ({
             const revertDelta = transaction.type === 'INCOME' ? -transaction.amount : transaction.amount;
             const revertedBalance = oldWallet.balance + revertDelta;
 
-            // Optimistic update for old wallet
             set((state) => ({
                 wallets: state.wallets.map(w => w.id === oldWallet.id ? { ...w, balance: revertedBalance } : w)
             }));
-            // DB Update (async)
             await supabase.from('wallets').update({ balance: revertedBalance }).eq('id', oldWallet.id);
         }
 
@@ -234,9 +244,7 @@ export const useStore = create<AppState>((set, get) => ({
         const newType = updates.type || transaction.type;
 
         // 3. Apply new effect on wallet balance
-        // Note: If wallet changed, we use the NEW wallet. If not, we use the OLD wallet (which already has reverted balance in local state)
-        // We must re-fetch the wallet from state to get the latest balance (important if oldWallet === newWallet)
-        const currentWallets = get().wallets;
+        const currentWallets = get().wallets; // Refetch updated state
         const targetWallet = currentWallets.find(w => w.id === newWalletId);
 
         if (targetWallet && newType !== 'ADJUSTMENT') {
@@ -267,15 +275,46 @@ export const useStore = create<AppState>((set, get) => ({
         }
     },
 
+    // Transaction Templates
+    addTransactionTemplate: async (template) => {
+        const dbTemplate = {
+            name: template.name,
+            amount: template.amount,
+            description: template.description,
+            type: template.type.toLowerCase(),
+            wallet_id: template.walletId,
+            category: template.category,
+            icon: template.icon
+        };
+
+        const { data, error } = await supabase.from('transaction_templates').insert(dbTemplate).select().single();
+        if (!error) {
+            set((state) => ({
+                transactionTemplates: [...state.transactionTemplates, mapDBTemplate(data)]
+            }));
+        } else {
+            console.error("Error adding template:", error);
+        }
+    },
+
+    deleteTransactionTemplate: async (id) => {
+        const { error } = await supabase.from('transaction_templates').delete().eq('id', id);
+        if (!error) {
+            set((state) => ({
+                transactionTemplates: state.transactionTemplates.filter(t => t.id !== id)
+            }));
+        }
+    },
+
     // Deudas
     addDebt: async (debtData) => {
         const dbDebt = {
-            person_name: debtData.description, // Mapping description -> person_name
+            person_name: debtData.description,
             amount: debtData.amount,
             type: debtData.type.toLowerCase(),
             due_date: debtData.dueDate,
             category_id: debtData.categoryId,
-            status: 'pending' // default
+            status: 'pending'
         };
 
         const { data, error } = await supabase.from('debts').insert(dbDebt).select().single();
@@ -363,20 +402,12 @@ export const useStore = create<AppState>((set, get) => ({
         const wallet = get().wallets.find(w => w.id === walletId);
         if (!debt || !wallet) return;
 
-        // 1. Update Debt Logic
         const newAmount = debt.amount - amount;
         const newStatus = newAmount <= 0.01 ? 'paid' : 'pending';
-
-        // 2. Create Transaction
         const transactionType = debt.type === 'PAYABLE' ? 'EXPENSE' : 'INCOME';
 
-        // Perform as much as possible
-        // Ideally this should be a transaction.
-
-        // Update Debt
         await get().updateDebt(debtId, { amount: newAmount > 0 ? newAmount : 0, status: newStatus.toUpperCase() as any });
 
-        // Add Transaction
         await get().addTransaction({
             walletId: walletId,
             amount,
@@ -385,8 +416,6 @@ export const useStore = create<AppState>((set, get) => ({
             date: new Date().toISOString(),
             source: 'Deudas',
         });
-
-        // addTransaction handles wallet balance update.
     },
 
 }));
