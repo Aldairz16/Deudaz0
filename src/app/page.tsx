@@ -10,6 +10,16 @@ import { Card, CardContent } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/utils";
 import { useState } from "react";
 
+const container = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1
+    }
+  }
+};
+
 export default function Home() {
   const { wallets, debts, showBalances, toggleShowBalances } = useStore();
 
@@ -31,15 +41,6 @@ export default function Home() {
   // "Real" Available = What I have (Wallets) + What I will collect (Receivables) - What I owe (Payables)
   const realAvailable = (totalWalletBalance + totalReceivables) - totalPayables;
 
-  const container = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1
-      }
-    }
-  };
 
   const displayAmount = (amount: number, currency: string = 'PEN') => {
     if (!showBalances) return '••••••';
