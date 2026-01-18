@@ -22,8 +22,8 @@ export default function Home() {
     .filter(d => d.type === 'RECEIVABLE' && d.status === 'PENDING')
     .reduce((acc, d) => acc + d.amount, 0);
 
-  // "Real" Available = What I have (Wallets) - What I owe (Payables)
-  const realAvailable = totalWalletBalance - totalPayables;
+  // "Real" Available = What I have (Wallets) + What I will collect (Receivables) - What I owe (Payables)
+  const realAvailable = (totalWalletBalance + totalReceivables) - totalPayables;
 
   const container = {
     hidden: { opacity: 0 },
@@ -60,7 +60,7 @@ export default function Home() {
                   </span>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Dinero real (Billeteras - Deudas)
+                  Dinero real (Billeteras + Por Cobrar - Deudas)
                 </p>
               </div>
 
