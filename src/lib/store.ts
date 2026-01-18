@@ -128,7 +128,15 @@ export const useStore = create<AppState>((set, get) => ({
     },
 
     updateWallet: async (id, updates) => {
-        const { error } = await supabase.from('wallets').update(updates).eq('id', id);
+        const dbUpdates: any = { ...updates };
+
+        // Map creditLimit to credit_limit for DB
+        if (updates.creditLimit !== undefined) {
+            dbUpdates.credit_limit = updates.creditLimit;
+            delete dbUpdates.creditLimit;
+        }
+
+        const { error } = await supabase.from('wallets').update(dbUpdates).eq('id', id);
         if (error) {
             console.error(error);
             return;
