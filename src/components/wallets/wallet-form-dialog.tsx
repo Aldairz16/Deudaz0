@@ -29,6 +29,7 @@ import { cn } from "@/lib/utils"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Wallet } from "@/types"
 import { Badge } from "@/components/ui/badge"
+import { MoneyInput } from "@/components/ui/money-input"
 
 const formSchema = z.object({
     name: z.string().min(1, "Name is required"),
@@ -235,7 +236,11 @@ export function WalletFormDialog({ children, mode = 'create', defaultValues }: W
                                     <FormItem>
                                         <FormLabel>Línea de Crédito Total</FormLabel>
                                         <FormControl>
-                                            <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                                            <MoneyInput
+                                                value={field.value}
+                                                onChange={field.onChange}
+                                                className="text-right font-medium"
+                                            />
                                         </FormControl>
                                         <FormDescription>El límite máximo de tu tarjeta.</FormDescription>
                                         <FormMessage />
@@ -253,7 +258,11 @@ export function WalletFormDialog({ children, mode = 'create', defaultValues }: W
                                     <FormItem>
                                         <FormLabel>{type === 'CREDIT' ? "Crédito Disponible Actual" : "Saldo Inicial"}</FormLabel>
                                         <FormControl>
-                                            <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                                            <MoneyInput
+                                                value={field.value}
+                                                onChange={field.onChange}
+                                                className="text-right font-medium"
+                                            />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>

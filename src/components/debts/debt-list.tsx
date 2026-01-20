@@ -5,7 +5,7 @@ import { useStore } from "@/lib/store"
 import { formatCurrency } from "@/lib/utils"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import { Pencil, Trash2, CheckCircle2, Circle, Info, Folder, Archive } from "lucide-react"
+import { Pencil, Trash2, CheckCircle2, Circle, Info, Folder, Archive, Eye, EyeOff } from "lucide-react"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { DebtFormDialog } from "./debt-form-dialog"
@@ -31,6 +31,13 @@ interface DebtListProps {
 export function DebtList({ type }: DebtListProps) {
     const { debts, debtCategories, deleteDebt, toggleDebtStatus, deleteDebtCategory } = useStore();
     const [showArchived, setShowArchived] = useState(false);
+    const [hiddenDebtIds, setHiddenDebtIds] = useState<string[]>([]);
+
+    const toggleHideDebt = (id: string) => {
+        setHiddenDebtIds(prev =>
+            prev.includes(id) ? prev.filter(hid => hid !== id) : [...prev, id]
+        );
+    };
 
     // 1. Base Filter by Type (Payable/Receivable)
     const typeFilteredDebts = debts.filter(d => d.type === type);
@@ -55,16 +62,17 @@ export function DebtList({ type }: DebtListProps) {
     const renderDebtRow = (debt: Debt) => {
         const isPaid = debt.status === 'PAID';
         const isExpanded = expandedDebtId === debt.id;
+        const isHidden = hiddenDebtIds.includes(debt.id);
 
         return (
-            <div key={debt.id} className="border-b last:border-0 hover:bg-muted/40 transition-colors">
+            <div key={debt.id} className={`border-b last:border-0 hover:bg-muted/40 transition-colors ${isHidden ? 'bg-muted/30' : ''}`}>
                 <div
                     className="flex flex-row items-center justify-between p-3 cursor-pointer"
                     onClick={() => setExpandedDebtId(isExpanded ? null : debt.id)}
                 >
-                    <div className="flex items-center gap-3 overflow-hidden">
+                    <div className={`flex items-center gap-3 overflow-hidden ${isHidden ? 'opacity-50' : ''}`}>
                         {/* Payment Trigger - Only for Pending */}
-                        {!isPaid ? (
+                        {!isPaid && !isHidden ? (
                             <DebtPaymentDialog debt={debt}>
                                 <Button
                                     variant="ghost"
@@ -76,23 +84,13 @@ export function DebtList({ type }: DebtListProps) {
                                 </Button>
                             </DebtPaymentDialog>
                         ) : (
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (confirm("¿Marcar esta deuda como pendiente nuevamente?")) {
-                                        toggleDebtStatus(debt.id);
-                                    }
-                                }}
-                                className="h-8 w-8 shrink-0 rounded-full text-green-500 hover:text-orange-500"
-                            >
-                                <CheckCircle2 className="h-5 w-5" />
-                            </Button>
+                            <div className="w-8 h-8 flex items-center justify-center">
+                                {isPaid ? <CheckCircle2 className="h-5 w-5 text-green-500" /> : <div className="w-5 h-5 rounded-full border-2 border-muted" />}
+                            </div>
                         )}
 
                         <div className="flex flex-col overflow-hidden">
-                            <span className="font-medium truncate">
+                            <span className={`font-medium truncate ${isHidden ? 'line-through decoration-muted-foreground/50' : ''}`}>
                                 {debt.description}
                             </span>
                             <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -103,38 +101,60 @@ export function DebtList({ type }: DebtListProps) {
                                     </div>
                                 )}
                                 {isPaid && <span className="text-green-600 font-medium">Pagado</span>}
+                                {isHidden && <span className="text-orange-500 font-medium italic">Oculto</span>}
                             </div>
                         </div>
                     </div>
 
                     <div className="flex items-center gap-4 shrink-0 ml-2">
-                        <span className={`font-bold ${isPaid ? 'text-muted-foreground line-through' : (type === 'RECEIVABLE' ? 'text-green-600' : 'text-red-600')}`}>
+                        <span className={`font-bold transition-all ${isHidden
+                            ? 'text-muted-foreground line-through opacity-30'
+                            : isPaid
+                                ? 'text-muted-foreground line-through'
+                                : (type === 'RECEIVABLE' ? 'text-green-600' : 'text-red-600')
+                            }`}>
                             {formatCurrency(debt.amount, 'PEN')}
                         </span>
 
                         <div className="flex items-center gap-1">
-                            <DebtFormDialog mode="edit" defaultValues={debt}>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-7 w-7 text-muted-foreground hover:text-primary"
-                                    onClick={(e) => e.stopPropagation()}
-                                >
-                                    <Pencil className="h-3.5 w-3.5" />
-                                </Button>
-                            </DebtFormDialog>
-
                             <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                                className={`h-7 w-7 ${isHidden ? 'text-orange-500' : 'text-muted-foreground hover:text-primary'}`}
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    if (confirm('¿Eliminar esta deuda permanentemente?')) deleteDebt(debt.id);
+                                    toggleHideDebt(debt.id);
                                 }}
                             >
-                                <Trash2 className="h-3.5 w-3.5" />
+                                {isHidden ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
                             </Button>
+
+                            {!isHidden && (
+                                <>
+                                    <DebtFormDialog mode="edit" defaultValues={debt}>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-7 w-7 text-muted-foreground hover:text-primary"
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
+                                            <Pencil className="h-3.5 w-3.5" />
+                                        </Button>
+                                    </DebtFormDialog>
+
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            if (confirm('¿Eliminar esta deuda permanentemente?')) deleteDebt(debt.id);
+                                        }}
+                                    >
+                                        <Trash2 className="h-3.5 w-3.5" />
+                                    </Button>
+                                </>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -176,7 +196,9 @@ export function DebtList({ type }: DebtListProps) {
                     const catDebts = debtsByCategory[cat.id];
                     if (!catDebts || catDebts.length === 0) return null;
 
-                    const totalAmount = catDebts.reduce((sum, d) => sum + d.amount, 0);
+                    const totalAmount = catDebts
+                        .filter(d => !hiddenDebtIds.includes(d.id))
+                        .reduce((sum, d) => sum + d.amount, 0);
 
                     return (
                         <AccordionItem key={cat.id} value={cat.id} className="border rounded-lg px-2">
@@ -249,7 +271,7 @@ export function DebtList({ type }: DebtListProps) {
                 <div className="flex justify-between items-center px-4 py-2 bg-muted/30 rounded-lg mt-2 font-medium text-sm">
                     <span>Total Pendiente</span>
                     <span>
-                        {formatCurrency(relevantDebts.reduce((sum, d) => sum + d.amount, 0), 'PEN')}
+                        {formatCurrency(relevantDebts.filter(d => !hiddenDebtIds.includes(d.id)).reduce((sum, d) => sum + d.amount, 0), 'PEN')}
                     </span>
                 </div>
             )}
