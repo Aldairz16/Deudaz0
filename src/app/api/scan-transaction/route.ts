@@ -21,23 +21,25 @@ export async function POST(req: NextRequest) {
         const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
         const prompt = `
-        You are an expert financial assistant. Analyze this image (which could be a bank statement screenshot, a mobile banking app screenshot, or a receipt).
+        You are an expert financial assistant. Analyze this image (which could be a bank statement screenshot, a mobile banking app screenshot like Yape/Plin, or a receipt).
         
         Extract all financial transactions visible.
         For each transaction, determine:
-        1. Description (Payee, Merchant, or Concept)
+        1. Description:
+           - For Yape/Plin screenshots: Identify the NAME of the person/business sent to/received from. If it says "Yapeaste a Juan Perez", description is "Juan Perez". If "Te yapeó Maria", description is "Maria".
+           - For Bank Statements: The merchant or transfer concept. Clean up codes like "OPS 123456".
+           - For Receipts: The business name (e.g. "Starbucks", "Uber").
         2. Amount (Absolute positive number)
         3. Type: 'EXPENSE' or 'INCOME'. 
-           - If the amount has a negative sign (e.g. -25.00) or is red, it is likely an EXPENSE.
-           - If it is positive or green, it is likely an INCOME.
-           - Transfers sent are expenses. Transfers received are incomes.
-        4. Date (YYYY-MM-DD format). If the year is missing, assume the current year (${new Date().getFullYear()}).
+           - Negative signs (-), Red colors, or "Sent/Enviaste" = EXPENSE.
+           - Positive signs (+), Green colors, or "Received/Recibiste" = INCOME.
+        4. Date (YYYY-MM-DD format). If year is missing, assume current year (${new Date().getFullYear()}).
         
-        Return ONLY a raw JSON array of objects. Do not include markdown formatting like \`\`\`json.
-        Example format:
+        Return ONLY a raw JSON array of objects.
+        Example:
         [
-            {"description": "Netflix", "amount": 15.99, "type": "EXPENSE", "date": "2024-05-20"},
-            {"description": "Salary", "amount": 1200.00, "type": "INCOME", "date": "2024-05-30"}
+            {"description": "Juan Perez", "amount": 15.00, "type": "EXPENSE", "date": "2024-05-20"},
+            {"description": "Starbucks", "amount": 12.50, "type": "EXPENSE", "date": "2024-05-20"}
         ]
         `;
 

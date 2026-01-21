@@ -204,7 +204,82 @@ export function TransactionScanner() {
                                 </Select>
                             </div>
 
-                            <div className="rounded-md border">
+                            {/* Mobile View (Cards) */}
+                            <div className="md:hidden space-y-4">
+                                {scannedData.map((item) => (
+                                    <div
+                                        key={item.id}
+                                        className={`border rounded-lg p-3 space-y-3 relative ${!item.selected ? 'opacity-50 bg-muted/20' : 'bg-card'}`}
+                                    >
+                                        <div className="flex items-start gap-3">
+                                            {/* Selection Toggle */}
+                                            <div
+                                                className={`mt-1 w-6 h-6 rounded border cursor-pointer flex items-center justify-center shrink-0 ${item.selected ? 'bg-primary border-primary text-primary-foreground' : 'border-muted-foreground'}`}
+                                                onClick={() => toggleSelection(item.id)}
+                                            >
+                                                {item.selected && <Check className="h-4 w-4" />}
+                                            </div>
+
+                                            <div className="flex-1 space-y-2">
+                                                {/* Description */}
+                                                <div>
+                                                    <label className="text-[10px] text-muted-foreground uppercase font-bold">Descripción</label>
+                                                    <Input
+                                                        value={item.description}
+                                                        onChange={(e) => updateField(item.id, 'description', e.target.value)}
+                                                        className="h-9 text-sm"
+                                                        placeholder="Descripción"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-2 pl-9">
+                                            {/* Amount */}
+                                            <div>
+                                                <label className="text-[10px] text-muted-foreground uppercase font-bold">Monto</label>
+                                                <Input
+                                                    type="number"
+                                                    value={item.amount}
+                                                    onChange={(e) => updateField(item.id, 'amount', parseFloat(e.target.value))}
+                                                    className="h-9 text-sm"
+                                                />
+                                            </div>
+
+                                            {/* Type */}
+                                            <div>
+                                                <label className="text-[10px] text-muted-foreground uppercase font-bold">Tipo</label>
+                                                <Select
+                                                    value={item.type}
+                                                    onValueChange={(val) => updateField(item.id, 'type', val)}
+                                                >
+                                                    <SelectTrigger className="h-9 text-sm">
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="EXPENSE">Gasto (-)</SelectItem>
+                                                        <SelectItem value="INCOME">Ingreso (+)</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+
+                                            {/* Date */}
+                                            <div className="col-span-2">
+                                                <label className="text-[10px] text-muted-foreground uppercase font-bold">Fecha</label>
+                                                <Input
+                                                    type="date"
+                                                    value={item.date}
+                                                    onChange={(e) => updateField(item.id, 'date', e.target.value)}
+                                                    className="h-9 text-sm"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Desktop View (Table) */}
+                            <div className="hidden md:block rounded-md border">
                                 <div className="grid grid-cols-[30px_1fr_100px_110px_120px] gap-2 p-3 bg-muted/50 font-medium text-xs text-muted-foreground">
                                     <div className="text-center">#</div>
                                     <div>Descripción</div>
