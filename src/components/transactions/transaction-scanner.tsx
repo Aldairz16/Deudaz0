@@ -108,26 +108,30 @@ export function TransactionScanner() {
         const toImport = scannedData.filter(t => t.selected);
         if (toImport.length === 0) return;
 
-        // Add all transactions
-        // We do this one by one or we could add a bulk method to store. 
-        // For now loop is fine for UI speed.
+        setLoading(true); // Re-use loading state
+        try {
+            // Process all in parallel
+            await Promise.all(toImport.map(item => {
+                // Fix date timezone issue by forcing time to noon to avoid day shift
+                const dateObj = new Date(item.date + "T12:00:00");
 
-        let count = 0;
-        for (const item of toImport) {
-            await addTransaction({
-                walletId: selectedWalletId,
-                amount: item.amount,
-                description: item.description,
-                type: item.type,
-                date: new Date(item.date).toISOString(),
-                category: "Importado", // Default category
-            });
-            count++;
+                return addTransaction({
+                    walletId: selectedWalletId,
+                    amount: item.amount,
+                    description: item.description,
+                    type: item.type,
+                    date: dateObj.toISOString(),
+                    category: "Importado",
+                });
+            }));
+
+            // Force reload to update history
+            window.location.href = '/history';
+        } catch (e) {
+            console.error(e);
+            alert("Error al importar. Revisa la consola.");
+            setLoading(false);
         }
-
-        // Redirect to history page and force refresh to show new data
-        // Using window.location to ensure full re-render of history from DB
-        window.location.href = '/history';
     };
 
     // Toggle row selection
@@ -158,6 +162,25 @@ export function TransactionScanner() {
                         Sube una captura de estado de cuenta o foto de recibo. La IA extraerá los datos.
                     </DialogDescription>
                 </DialogHeader>
+
+                {/* Wallet Selector - Fixed at top if data exists */}
+                {scannedData.length > 0 && (
+                    <div className="py-2 px-1 border-b bg-background z-10 sticky top-0">
+                        <div className="flex items-center justify-between gap-4">
+                            <span className="text-sm font-medium whitespace-nowrap">Guardar en:</span>
+                            <Select value={selectedWalletId} onValueChange={setSelectedWalletId}>
+                                <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Selecciona una billetera..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {wallets.map(w => (
+                                        <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                )}
 
                 <div className="flex-1 overflow-y-auto py-4 space-y-6">
 
@@ -191,19 +214,6 @@ export function TransactionScanner() {
                     {/* Results Table */}
                     {scannedData.length > 0 && (
                         <div className="space-y-4">
-                            <div className="flex items-center justify-between bg-muted/30 p-3 rounded-lg">
-                                <span className="text-sm font-medium">Billetera de Destino:</span>
-                                <Select value={selectedWalletId} onValueChange={setSelectedWalletId}>
-                                    <SelectTrigger className="w-[200px]">
-                                        <SelectValue placeholder="Selecciona billetera" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {wallets.map(w => (
-                                            <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
 
                             {/* Mobile View (Cards) */}
                             <div className="md:hidden space-y-4">
