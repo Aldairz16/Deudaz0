@@ -17,8 +17,8 @@ export async function POST(req: NextRequest) {
         const buffer = Buffer.from(arrayBuffer);
         const base64Image = buffer.toString('base64');
 
-        // Use Gemini 1.5 Flash for speed and cost efficiency
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        // Use Gemini 1.5 Flash (using latest alias to avoid 404)
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
 
         const prompt = `
         You are an expert financial assistant. Analyze this image (which could be a bank statement screenshot, a mobile banking app screenshot, or a receipt).
