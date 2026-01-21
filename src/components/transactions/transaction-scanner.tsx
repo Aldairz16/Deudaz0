@@ -125,8 +125,9 @@ export function TransactionScanner() {
             count++;
         }
 
-        setOpen(false);
-        // Could show success toast here
+        // Redirect to history page and force refresh to show new data
+        // Using window.location to ensure full re-render of history from DB
+        window.location.href = '/history';
     };
 
     // Toggle row selection
