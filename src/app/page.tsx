@@ -11,6 +11,8 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { TransactionScanner } from "@/components/transactions/transaction-scanner";
+
 
 
 export default function Home() {
@@ -59,6 +61,9 @@ export default function Home() {
                 <Plus className="h-4 w-4" /> Billetera
               </Button>
             </WalletFormDialog>
+
+            <TransactionScanner />
+
             <Dialog>
               <DialogTrigger asChild>
                 <Button variant="ghost" size="icon" className="rounded-full">
